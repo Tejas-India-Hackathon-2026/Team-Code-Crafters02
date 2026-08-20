@@ -1,5 +1,6 @@
 import { createServerSideClient } from '../../../../lib/supabaseServer';
 import BiddingDrawer from '../../../../components/projects/BiddingDrawer';
+import ProjectProposalsList from '../../../../components/projects/ProjectProposalsList';
 import NearbyMakersMap from '../../../../components/map/NearbyMakersMap';
 import ProjectOwnerActions from '../../../../components/projects/ProjectOwnerActions';
 import { Calendar, DollarSign, User, ArrowLeft } from 'lucide-react';
@@ -162,33 +163,12 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                         isVerified={userProfile?.vendor_verified || false}
                     />
 
-                    {/* Received Bids (Protected by RLS) */}
-                    <div className="bg-white border border-[#E8E2D9] rounded-xl p-5 shadow-card">
-                        <h3 className="font-semibold text-sm text-[#1E1B18] mb-3">
-                            Received Proposals ({bids?.length || 0})
-                        </h3>
-                        {bids && bids.length > 0 ? (
-                            <div className="flex flex-col gap-3">
-                                {bids.map((bid) => (
-                                    <div key={bid.id} className="p-3 bg-[#FDFBF7] border border-[#E8E2D9] rounded-lg">
-                                        <div className="flex justify-between items-center mb-1">
-                                            <span className="text-xs font-semibold text-[#1E1B18]">
-                                                {bid.vendor?.full_name || 'Verified Artisan'}
-                                            </span>
-                                            <span className="text-xs font-bold text-[#C85A32] font-mono">
-                                                ₹{bid.amount?.toLocaleString('en-IN')}
-                                            </span>
-                                        </div>
-                                        <p className="text-xs text-[#6B635B] line-clamp-2 leading-relaxed">{bid.proposal_text}</p>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-xs text-[#6B635B]">
-                                No proposals submitted yet. Verified artisans in your region can submit bids.
-                            </p>
-                        )}
-                    </div>
+                    {/* Received Bids (Real-time synchronized across tabs and cache) */}
+                    <ProjectProposalsList
+                        projectId={id}
+                        initialBids={(bids || []) as any}
+                        isOwner={!!isOwner}
+                    />
                 </div>
             </div>
         </main>

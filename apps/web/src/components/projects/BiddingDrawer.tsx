@@ -60,6 +60,7 @@ export function BiddingDrawer({
     onBidSubmitted,
 }: BiddingDrawerProps): React.ReactNode {
     const supabase = createClient();
+    const [existingBid, setExistingBid] = useState<any>(null);
     const [bidAmount, setBidAmount] = useState('');
     const [proposalText, setProposalText] = useState('');
     const [estimatedDays, setEstimatedDays] = useState('7');
@@ -69,12 +70,56 @@ export function BiddingDrawer({
 
     const breakdown = calculateBidBreakdown(parseFloat(bidAmount));
 
+    // Load existing bid if previously submitted
+    React.useEffect(() => {
+        const checkExistingBid = async () => {
+            try {
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) return;
+
+                const { data: bid } = await supabase
+                    .from('project_bids')
+                    .select('*')
+                    .eq('project_id', projectId)
+                    .eq('vendor_id', user.id)
+                    .maybeSingle();
+
+                let foundBid = bid;
+                if (!foundBid && typeof window !== 'undefined') {
+                    try {
+                        const cached = JSON.parse(localStorage.getItem('karigar_project_bids_cache') || '[]');
+                        foundBid = cached.find((b: any) => (b.projectId === projectId || b.project_id === projectId) && (b.vendorId === user.id || b.vendor_id === user.id));
+                    } catch (e) {}
+                }
+
+                if (foundBid) {
+                    setExistingBid(foundBid);
+                    setBidAmount(foundBid.bid_amount?.toString() || foundBid.amount?.toString() || '');
+                    
+                    const rawText = foundBid.proposal_text || foundBid.proposalText || '';
+                    const turnaroundMatch = rawText.match(/\[ESTIMATED_TURNAROUND:\s*(\d+)\s*Days\]/);
+                    if (turnaroundMatch) {
+                        setEstimatedDays(turnaroundMatch[1]);
+                    }
+                    setProposalText(rawText.replace(/\[ESTIMATED_TURNAROUND:\s*\d+\s*Days\]/, '').trim());
+                }
+            } catch (err) {
+                console.error('Error fetching existing bid:', err);
+            }
+        };
+
+        if (projectId && isVendor) {
+            checkExistingBid();
+        }
+    }, [projectId, isVendor]);
+
     const handleBidSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setStatusMsg('');
 
         if (!isVendor || !isVerified) {
             setStatusMsg('Only AI-verified artisans can place bids on projects.');
+            setStatusType('error');
             return;
         }
 
@@ -103,23 +148,111 @@ export function BiddingDrawer({
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('You must be signed in as a verified maker.');
 
-            const { error } = await supabase.from('project_bids').insert({
-                project_id: projectId,
-                vendor_id: user.id,
-                bid_amount: amountNum,
-                proposal_text: `${cleanProposal}\n\n[ESTIMATED_TURNAROUND: ${estimatedDays} Days]`,
-                status: 'PENDING',
+            const isUpdate = !!existingBid;
+            const fullProposal = `${cleanProposal}\n\n[ESTIMATED_TURNAROUND: ${estimatedDays} Days]`;
+
+            const res = await fetch('/api/vendor/bids/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: isUpdate ? 'UPDATE' : 'SUBMIT',
+                    projectId: projectId,
+                    vendorId: user.id,
+                    bidId: existingBid?.id,
+                    bidAmount: amountNum,
+                    proposalText: fullProposal,
+                }),
             });
 
-            if (error) throw error;
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Failed to submit proposal');
+            }
 
-            setStatusMsg('✓ Confidential proposal successfully submitted to the client.');
+            const updatedBidRecord = {
+                id: data.bid?.id || existingBid?.id || `bid-${Date.now()}`,
+                project_id: projectId,
+                projectId: projectId,
+                vendor_id: user.id,
+                vendorId: user.id,
+                bid_amount: amountNum,
+                amount: amountNum,
+                proposal_text: fullProposal,
+                proposalText: fullProposal,
+                status: 'PENDING',
+                vendor: {
+                    full_name: 'Verified Artisan',
+                    vendor_verified: true,
+                },
+            };
+
+            setExistingBid(updatedBidRecord);
+
+            if (typeof window !== 'undefined') {
+                try {
+                    const currentCache = JSON.parse(localStorage.getItem('karigar_project_bids_cache') || '[]');
+                    const filtered = currentCache.filter(
+                        (b: any) => !((b.projectId === projectId || b.project_id === projectId) && (b.vendorId === user.id || b.vendor_id === user.id))
+                    );
+                    localStorage.setItem('karigar_project_bids_cache', JSON.stringify([...filtered, updatedBidRecord]));
+                } catch (e) {}
+            }
+
+            setStatusMsg(isUpdate ? '✓ Proposal terms successfully updated.' : '✓ Confidential proposal successfully submitted.');
             setStatusType('success');
-            setBidAmount('');
-            setProposalText('');
             if (onBidSubmitted) onBidSubmitted();
         } catch (err: any) {
             setStatusMsg(err.message || 'Failed to submit proposal.');
+            setStatusType('error');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDeleteBid = async () => {
+        if (!window.confirm('Are you sure you want to withdraw your proposal from this project?')) {
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const res = await fetch('/api/vendor/bids/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE',
+                    projectId: projectId,
+                    vendorId: user.id,
+                    bidId: existingBid?.id,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Failed to withdraw proposal');
+            }
+
+            if (typeof window !== 'undefined') {
+                try {
+                    const currentCache = JSON.parse(localStorage.getItem('karigar_project_bids_cache') || '[]');
+                    const filtered = currentCache.filter(
+                        (b: any) => !((b.projectId === projectId || b.project_id === projectId) && (b.vendorId === user.id || b.vendor_id === user.id))
+                    );
+                    localStorage.setItem('karigar_project_bids_cache', JSON.stringify(filtered));
+                } catch (e) {}
+            }
+
+            setExistingBid(null);
+            setBidAmount('');
+            setProposalText('');
+            setStatusMsg('✓ Your proposal has been withdrawn. You can submit a new bid anytime.');
+            setStatusType('info');
+            if (onBidSubmitted) onBidSubmitted();
+        } catch (err: any) {
+            setStatusMsg(err.message || 'Failed to withdraw proposal.');
             setStatusType('error');
         } finally {
             setLoading(false);
@@ -150,13 +283,35 @@ export function BiddingDrawer({
 
     return (
         <div className="p-5 bg-white border border-[#E8E2D9] rounded-xl shadow-sm">
-            <div className="flex items-center gap-2 mb-4">
-                <ShieldCheck className="w-5 h-5 text-[#2C4A3E]" />
-                <h3 className="font-semibold text-sm text-[#1E1B18]">Submit Artisan Commission Proposal</h3>
+            <div className="flex items-center justify-between gap-2 mb-4">
+                <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-[#2C4A3E]" />
+                    <h3 className="font-semibold text-sm text-[#1E1B18]">
+                        {existingBid ? 'Update Artisan Commission Proposal' : 'Submit Artisan Commission Proposal'}
+                    </h3>
+                </div>
+                {existingBid && (
+                    <span className="text-[10px] font-bold bg-[#EDF7ED] text-[#2E7D32] px-2.5 py-0.5 rounded-full uppercase border border-[#2E7D32]/20">
+                        Bid Active
+                    </span>
+                )}
             </div>
 
             {statusMsg && (
-                <p className="text-xs mb-3 text-[#C85A32] font-medium">{statusMsg}</p>
+                <div
+                    role="alert"
+                    aria-live="polite"
+                    className={`text-xs p-2.5 rounded-lg mb-3 flex items-center gap-1.5 ${
+                        statusType === 'error'
+                            ? 'bg-[#FDEDED] text-[#D32F2F] border border-[#D32F2F]/20 font-medium'
+                            : statusType === 'success'
+                            ? 'bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/20 font-semibold'
+                            : 'bg-[#FFF4E5] text-[#ED6C02] border border-[#ED6C02]/20 font-medium'
+                    }`}
+                >
+                    {statusType === 'error' ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
+                    <span>{statusMsg}</span>
+                </div>
             )}
 
             <form onSubmit={handleBidSubmit} className="flex flex-col gap-3">
@@ -231,14 +386,32 @@ export function BiddingDrawer({
                     />
                 </div>
 
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="bg-[#2C4A3E] text-white hover:bg-[#223B31] py-2 px-4 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
-                >
-                    <Send className="w-3.5 h-3.5" />
-                    {loading ? 'Submitting Bid...' : 'Submit Confidential Bid'}
-                </button>
+                <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#F3EFEA]">
+                    {existingBid ? (
+                        <button
+                            type="button"
+                            onClick={handleDeleteBid}
+                            disabled={loading}
+                            className="text-xs text-[#D32F2F] hover:text-[#B71C1C] font-semibold py-2 px-3 rounded-lg border border-[#D32F2F]/20 hover:bg-[#FDEDED] transition-all cursor-pointer flex items-center gap-1"
+                        >
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Withdraw Bid</span>
+                        </button>
+                    ) : (
+                        <div></div>
+                    )}
+
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="bg-[#2C4A3E] text-white hover:bg-[#223B31] py-2 px-4 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+                    >
+                        <Send className="w-3.5 h-3.5" />
+                        {loading
+                            ? (existingBid ? 'Updating...' : 'Submitting Bid...')
+                            : (existingBid ? 'Update Proposal' : 'Submit Confidential Bid')}
+                    </button>
+                </div>
             </form>
         </div>
     );
