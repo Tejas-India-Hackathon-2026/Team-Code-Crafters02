@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+celery
+redis
+google-genai
+supabase
+pydantic
+python-dotenv
