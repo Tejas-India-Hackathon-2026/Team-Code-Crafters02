@@ -35,16 +35,41 @@ export interface EscrowStatusBadgeProps {
     className?: string;
 }
 
+/** Resolves Section 194-O statutory TDS calculations for gross order amounts. */
+export function resolveOrderTdsBreakdown(grossAmount: number): TdsBreakdownSummary {
+    const gross = Math.max(0, isNaN(grossAmount) ? 0 : grossAmount);
+    const tds = Math.round(gross * 0.01);
+    const net = Math.max(0, gross - tds);
+    return {
+        grossAmount: gross,
+        withheldTds: tds,
+        netMakerPayout: net,
+        statutorySection: 'Section 194-O (1% E-Commerce TDS)',
+    };
+}
+
 /** EscrowStatusBadge renders dual-rail statutory escrow states with accessible color tokens. */
-export function EscrowStatusBadge({ status, className = '' }: EscrowStatusBadgeProps): React.ReactNode {
-    const config: Record<string, { label: string; bg: string; text: string; icon: React.ComponentType<{ className?: string }> }> = {
+export function EscrowStatusBadge({
+    status,
+    rail,
+    showRailBadge = false,
+    size = 'md',
+    className = '',
+}: EscrowStatusBadgeProps): React.ReactNode {
+    const config: Record<string, { label: string; bg: string; text: string; icon: React.ComponentType<{ className?: string }>; pulse?: boolean }> = {
+        AWAITING_PAYMENT: { label: 'Awaiting Escrow Funding', bg: 'bg-[#FAF8F5]', text: 'text-[#6B635B]', icon: Clock },
         INITIATED: { label: 'Payment Initiated', bg: 'bg-[#FAF8F5]', text: 'text-[#6B635B]', icon: Clock },
+        HELD_IN_ESCROW: { label: 'Locked in Escrow', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: Lock, pulse: true },
         FUNDED: { label: 'Escrow Locked', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: Lock },
-        DISPATCHED: { label: 'In Transit', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: ShieldCheck },
-        IN_INSPECTION: { label: '48h Inspection Window', bg: 'bg-[#FFF4E5]', text: 'text-[#ED6C02]', icon: Clock },
-        RELEASED: { label: 'Funds Released to Maker', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: CheckCircle2 },
+        DISPATCHED: { label: 'In Transit with Courier', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: ShieldCheck },
+        IN_TRANSIT: { label: 'In Transit', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: ShieldCheck },
+        DELIVERED_PENDING_BUFFER: { label: '48h Inspection Buffer', bg: 'bg-[#FFF4E5]', text: 'text-[#ED6C02]', icon: Clock, pulse: true },
+        IN_INSPECTION: { label: '48h Inspection Window', bg: 'bg-[#FFF4E5]', text: 'text-[#ED6C02]', icon: Clock, pulse: true },
+        RELEASED: { label: 'Milestone Released to Maker', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: CheckCircle2 },
+        COMPLETED: { label: 'Order Complete', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: CheckCircle2 },
         REFUNDED: { label: 'Refunded to Buyer', bg: 'bg-[#F3EFEA]', text: 'text-[#6B635B]', icon: RefreshCw },
-        DISPUTED: { label: 'Disputed - In Triage', bg: 'bg-[#FDEDED]', text: 'text-[#D32F2F]', icon: AlertTriangle },
+        DISPUTED: { label: 'Disputed - In Triage', bg: 'bg-[#FDEDED]', text: 'text-[#D32F2F]', icon: AlertTriangle, pulse: true },
+        IN_TRIAGE: { label: 'Under Platform Review', bg: 'bg-[#FDEDED]', text: 'text-[#D32F2F]', icon: AlertTriangle, pulse: true },
     };
 
     const current = config[status.toUpperCase()] || {
