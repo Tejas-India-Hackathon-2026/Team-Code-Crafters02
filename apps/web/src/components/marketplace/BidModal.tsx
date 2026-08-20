@@ -72,6 +72,7 @@ export function BidModal({
                         <div className="relative flex items-center">
                             <DollarSign className="absolute left-3.5 w-4 h-4 text-[#6B635B]" />
                             <input
+                                id="bid-quote-input"
                                 type="number"
                                 required
                                 min="100"
