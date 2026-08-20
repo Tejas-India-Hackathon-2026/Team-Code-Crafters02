@@ -3,17 +3,35 @@
 import React from 'react';
 import { ShieldCheck, Clock, CheckCircle2, AlertTriangle, RefreshCw, Lock } from 'lucide-react';
 
-export type EscrowState =
+export type EscrowOrderStatus =
+    | 'AWAITING_PAYMENT'
     | 'INITIATED'
+    | 'HELD_IN_ESCROW'
     | 'FUNDED'
     | 'DISPATCHED'
+    | 'IN_TRANSIT'
+    | 'DELIVERED_PENDING_BUFFER'
     | 'IN_INSPECTION'
     | 'RELEASED'
+    | 'COMPLETED'
     | 'REFUNDED'
-    | 'DISPUTED';
+    | 'DISPUTED'
+    | 'IN_TRIAGE';
+
+export type EscrowRailType = 'WEB2_NODAL' | 'WEB3_ONCHAIN_USDC' | 'UPI_INSTANT';
+
+export interface TdsBreakdownSummary {
+    grossAmount: number;
+    withheldTds: number;
+    netMakerPayout: number;
+    statutorySection: string;
+}
 
 export interface EscrowStatusBadgeProps {
-    status: EscrowState | string;
+    status: EscrowOrderStatus | string;
+    rail?: EscrowRailType | string;
+    showRailBadge?: boolean;
+    size?: 'sm' | 'md' | 'lg';
     className?: string;
 }
 
