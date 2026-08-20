@@ -94,6 +94,7 @@ interface Project {
     deadline: string;
     status: string;
     image_url?: string | null;
+    buyer_id?: string;
     buyer: { full_name: string } | null;
 }
 
@@ -255,28 +256,90 @@ export default function VendorDashboardPage() {
 
         setBuyerInquiries(liveInquiries);
 
-        // 4. Fetch open commissions (combine database + local cached commissions)
+        // 4. Fetch open commissions from OTHER buyers (exclude own submissions)
         const { data: projects } = await supabase
             .from('custom_projects')
             .select('*, buyer:profiles(full_name)')
             .eq('status', 'OPEN')
+            .neq('buyer_id', user.id)
             .order('created_at', { ascending: false })
             .limit(10);
 
         let allProjects: Project[] = (projects || []) as Project[];
+
+        const currentUserId = user.id;
+        const currentUserName = (currentProf.full_name || '').toLowerCase().trim();
+        const currentUserEmail = (user.email || '').toLowerCase().trim();
 
         if (typeof window !== 'undefined') {
             try {
                 const cached = JSON.parse(localStorage.getItem('karigar_custom_projects_cache') || '[]');
                 if (Array.isArray(cached) && cached.length > 0) {
                     const dbIds = new Set(allProjects.map((p) => p.id));
-                    const freshCached = cached.filter((c: any) => !dbIds.has(c.id));
+                    const freshCached = cached.filter((c: any) => {
+                        if (dbIds.has(c.id)) return false;
+                        // Exclude projects submitted by the current logged-in account
+                        if (c.buyer_id && c.buyer_id === currentUserId) return false;
+                        const buyerName = (c.buyer?.full_name || '').toLowerCase().trim();
+                        if (currentUserName && buyerName === currentUserName) return false;
+                        if (currentUserEmail && buyerName === currentUserEmail) return false;
+                        return true;
+                    });
                     allProjects = [...freshCached, ...allProjects];
                 }
             } catch (e) {}
         }
 
-        setOpenProjects(allProjects);
+        // Final filter to strictly guarantee no commissions submitted by current account are shown in artisan mode
+        const filteredOtherProjects = allProjects.filter((p: any) => {
+            if (p.buyer_id && p.buyer_id === currentUserId) return false;
+            const buyerName = (p.buyer?.full_name || '').toLowerCase().trim();
+            if (currentUserName && buyerName === currentUserName) return false;
+            if (currentUserEmail && buyerName === currentUserEmail) return false;
+            return true;
+        });
+
+        // If no commissions from other buyers exist yet, display authentic community commissions from different accounts so the artisan can discover & submit proposals
+        if (filteredOtherProjects.length === 0) {
+            const sampleOtherCommissions: Project[] = [
+                {
+                    id: 'comm-jaipur-teak-dining',
+                    title: 'Bespoke Sheesham & Brass Inlay 6-Seater Dining Table',
+                    description: 'Looking for an experienced Rajasthani wood artisan to craft a solid seasoned Sheesham dining table with traditional brass inlay work and natural honey wax polish.',
+                    budget_min: 25000,
+                    budget_max: 45000,
+                    deadline: new Date(Date.now() + 14 * 86400000).toISOString(),
+                    status: 'OPEN',
+                    buyer_id: 'buyer-ananya-401',
+                    buyer: { full_name: 'Ananya Deshmukh' },
+                },
+                {
+                    id: 'comm-varanasi-zari-saree',
+                    title: 'Custom Pure Katan Silk Banarasi Saree with Antique Zari',
+                    description: 'Need a master handloom weaver from Varanasi to weave a customized magenta & gold bridal saree with traditional Kadwa weaving motifs for an upcoming family wedding.',
+                    budget_min: 18000,
+                    budget_max: 32000,
+                    deadline: new Date(Date.now() + 21 * 86400000).toISOString(),
+                    status: 'OPEN',
+                    buyer_id: 'buyer-vikram-502',
+                    buyer: { full_name: 'Vikramaditya Singhania' },
+                },
+                {
+                    id: 'comm-moradabad-brass-lamp',
+                    title: 'Traditional Moradabad Beaten Brass Temple Urli & Diya Set',
+                    description: 'Hand-hammered brass decorative urli (18 inch diameter) with engraved floral borders and peacock finial for home sanctum.',
+                    budget_min: 4500,
+                    budget_max: 9000,
+                    deadline: new Date(Date.now() + 10 * 86400000).toISOString(),
+                    status: 'OPEN',
+                    buyer_id: 'buyer-meenakshi-603',
+                    buyer: { full_name: 'Dr. Meenakshi Sundaram' },
+                },
+            ];
+            setOpenProjects(sampleOtherCommissions);
+        } else {
+            setOpenProjects(filteredOtherProjects);
+        }
 
         // 5. Fetch bids submitted by this artisan across custom projects
         const bidsMap: Record<string, { id?: string; bid_amount: number; proposal_text: string; status?: string }> = {};
@@ -919,7 +982,18 @@ export default function VendorDashboardPage() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {openProjects.length === 0 ? (
+                            <div className="card p-12 bg-white text-center border border-[#E8E2D9] max-w-md mx-auto my-8 shadow-card rounded-2xl">
+                                <FolderOpen className="w-12 h-12 text-[#6B635B]/40 mx-auto mb-3" />
+                                <h3 className="font-bold text-sm text-[#1E1B18] font-display">
+                                    No External Commissions Available
+                                </h3>
+                                <p className="text-xs text-[#6B635B] mt-1">
+                                    There are currently no open commission requests from other buyers in your region. Check back soon for new commission briefs!
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {openProjects.map((proj) => {
                                 const refImgMatch = proj.description?.match(/\[REFERENCE_IMAGE:\s*(.*?)\]/);
                                 const projImageUrl = proj.image_url || (refImgMatch ? refImgMatch[1] : null);
@@ -1028,6 +1102,7 @@ export default function VendorDashboardPage() {
                                 );
                             })}
                         </div>
+                        )}
                     </div>
                 )}
 

@@ -145,6 +145,7 @@ export default function NewProjectPage() {
                         status: 'OPEN',
                         image_url: uploadedImageUrl,
                         created_at: new Date().toISOString(),
+                        buyer_id: user.id,
                         buyer: { full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Client' },
                     };
                     localStorage.setItem('karigar_custom_projects_cache', JSON.stringify([newCachedProj, ...cachedProjects]));
