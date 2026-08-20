@@ -22,7 +22,7 @@ export default function AuthForm() {
         setErrorMsg('');
         setSuccessMsg('');
 
-        const cleanEmail = email.trim();
+        const cleanEmail = email.trim().toLowerCase();
         const cleanPassword = password;
 
         if (!cleanEmail || !cleanPassword) {
@@ -33,23 +33,13 @@ export default function AuthForm() {
         setLoading(true);
 
         try {
+            // 1. Try client-side Supabase signIn
             const { data, error } = await supabase.auth.signInWithPassword({
                 email: cleanEmail,
                 password: cleanPassword,
             });
 
-            if (error) {
-                const errMsg = error.message.toLowerCase();
-                if (errMsg.includes('invalid login credentials') || errMsg.includes('user not found')) {
-                    setErrorMsg('Invalid email or password. If you do not have an account yet, click "Create Account" above.');
-                } else {
-                    setErrorMsg(error.message || 'Sign in failed. Please check your credentials.');
-                }
-                setLoading(false);
-                return;
-            }
-
-            if (data?.user) {
+            if (!error && data?.user) {
                 const { data: prof } = await supabase
                     .from('profiles')
                     .select('is_vendor')
@@ -61,7 +51,41 @@ export default function AuthForm() {
                 } else {
                     window.location.href = '/profile';
                 }
+                return;
             }
+
+            // 2. Server-assisted login fallback (auto-confirms unverified emails, syncs sessions)
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: cleanEmail,
+                    password: cleanPassword,
+                }),
+            });
+
+            const loginData = await res.json();
+
+            if (loginData.success && loginData.session) {
+                await supabase.auth.setSession({
+                    access_token: loginData.session.access_token,
+                    refresh_token: loginData.session.refresh_token,
+                });
+
+                if (loginData.isVendor) {
+                    window.location.href = '/artisan';
+                } else {
+                    window.location.href = '/profile';
+                }
+                return;
+            }
+
+            if (loginData.notFound) {
+                setErrorMsg('No account found with this email. Click "Create Account" above to register.');
+            } else {
+                setErrorMsg(loginData.error || (error?.message ?? 'Sign in failed. Please check your credentials.'));
+            }
+            setLoading(false);
         } catch (err: any) {
             console.error('Sign In Error:', err);
             setErrorMsg(err.message || 'An error occurred during sign in.');
@@ -123,16 +147,40 @@ export default function AuthForm() {
                 password: cleanPassword,
             });
 
-            if (signInError) {
-                setSuccessMsg('Account registered successfully! Please click Sign In with your password.');
-                setMode('signin');
-                setLoading(false);
-            } else {
+            if (!signInError && signInData?.user) {
                 if (isArtisan) {
                     window.location.href = '/verification/onboarding';
                 } else {
                     window.location.href = '/profile';
                 }
+                return;
+            }
+
+            // Fallback to server-assisted login if direct client signIn had an issue
+            const loginRes = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    email: cleanEmail,
+                    password: cleanPassword,
+                }),
+            });
+            const loginData = await loginRes.json();
+
+            if (loginData.success && loginData.session) {
+                await supabase.auth.setSession({
+                    access_token: loginData.session.access_token,
+                    refresh_token: loginData.session.refresh_token,
+                });
+                if (isArtisan) {
+                    window.location.href = '/verification/onboarding';
+                } else {
+                    window.location.href = '/profile';
+                }
+            } else {
+                setSuccessMsg('Account registered successfully! Please click Sign In with your password.');
+                setMode('signin');
+                setLoading(false);
             }
         } catch (err: any) {
             console.error('Registration Error:', err);
