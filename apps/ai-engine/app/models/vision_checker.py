@@ -6,7 +6,7 @@ from google import genai
 from google.genai import types
 
 def evaluate_craft_frames(frame_paths: list[str], logo_url: str = None) -> dict:
-    """Evaluates video keyframes for craft authenticity, brand logo matching, and serial marks"""
+    """Evaluates video keyframes for craft authenticity, brand logo/watermark matching, and serial marks"""
     client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
     
     uploaded_files = []
@@ -27,20 +27,20 @@ def evaluate_craft_frames(frame_paths: list[str], logo_url: str = None) -> dict:
             print(f"Could not download registered brand logo: {e}")
 
     prompt = """
-    Analyze these workshop keyframes for artisan authenticity.
+    Analyze these workshop and studio keyframes for artisan authenticity.
     Evaluate:
-    1. Brand logo matching: Compare any logo visible in the video frames with the provided reference registered brand logo.
-    2. Sequential limited-edition batch marking (e.g. #04/50, signature engraving).
-    3. Maker presence/handcrafting activity.
+    1. Maker branding & watermark matching: Compare any logo, watermark (e.g. Artist handle, signature, studio logo, watermark overlay) visible in the video frames with reference branding.
+    2. Authentic artisanal crafting activity: Recognize manual handcrafting, carving, wood/coconut/clay shaping, polishing, painting, joining, or sculpting.
+    3. Sequential limited-edition batch marking or artisan signature (e.g. #04/50, signature engraving).
 
     Output JSON ONLY in this exact format:
     {
-      "confidence_score": 0.92,
+      "confidence_score": 0.94,
       "logo_detected": true,
       "logo_matched": true,
       "batch_marking": "#04/50",
       "liveness_verified": true,
-      "summary": "Handcrafted woodworking detected. Registered brand logo matched on workbench and product stamp."
+      "summary": "Handcrafted artisanal craftsmanship detected. Maker branding/watermark and manual shaping verified."
     }
     """
 
