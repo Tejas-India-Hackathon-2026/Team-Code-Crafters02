@@ -191,6 +191,7 @@ export default function ReelFeedPage() {
     const supabase = createClient();
     const [reels, setReels] = useState<Reel[]>([]);
     const [loading, setLoading] = useState(true);
+    const [isVendor, setIsVendor] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState<string>('');
     const [viewMode, setViewMode] = useState<'grid' | 'reel'>('grid');
@@ -198,6 +199,38 @@ export default function ReelFeedPage() {
 
     useEffect(() => {
         fetchReels();
+
+        const checkUserRole = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            const user = session?.user;
+            if (user) {
+                const { data } = await supabase
+                    .from('profiles')
+                    .select('is_vendor')
+                    .eq('id', user.id)
+                    .maybeSingle();
+
+                if (data) {
+                    setIsVendor(!!data.is_vendor);
+                } else if (user.user_metadata?.is_vendor !== undefined) {
+                    setIsVendor(!!user.user_metadata.is_vendor);
+                }
+            } else {
+                setIsVendor(false);
+            }
+        };
+
+        checkUserRole();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user) {
+                checkUserRole();
+            } else {
+                setIsVendor(false);
+            }
+        });
+
+        return () => subscription.unsubscribe();
     }, []);
 
     const fetchReels = async () => {
@@ -382,13 +415,15 @@ export default function ReelFeedPage() {
                             </button>
                         </div>
 
-                        <Link
-                            href="/verification/upload"
-                            className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5"
-                        >
-                            <Video className="w-3.5 h-3.5" />
-                            Upload Product Reel
-                        </Link>
+                        {isVendor && (
+                            <Link
+                                href="/verification/upload"
+                                className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5"
+                            >
+                                <Video className="w-3.5 h-3.5" />
+                                Upload Product Reel
+                            </Link>
+                        )}
                     </div>
                 </div>
 
