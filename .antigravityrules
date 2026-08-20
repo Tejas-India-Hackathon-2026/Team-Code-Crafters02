@@ -13,9 +13,10 @@ You are the lead full-stack engineer on this project. When planning, generating 
 3. UI / Design Tokens:
    - Use Tailwind CSS and UI design tokens strictly matching specifications in docs/04-Frontend-Spec.md.
 
-4. Local-Only Atomic Git Workflow:
+4. Granular Atomic Commits & Local Git Workflow:
    - For every task, generate granular, atomic commits locally:
-     * Stage individual files: `git add "<file-path>"`
+     * Stage individual files or modification units: `git add "<file-path>"`
      * Create descriptive conventional commits: `git commit -m "<type>(<scope>): <summary>"`
+     * Granular Commit Rule: Any substantive line change, group of statements, function block, or paragraph-level code change must be recorded as an independent commit before proceeding forward (not for trivial single-property or whitespace tweaks, but each distinct functional, logic, or statement group change counts as a separate commit).
    - DO NOT execute `git push` or `git push origin <branch>` automatically.
    - Keep all created commits local on the branch until the user explicitly reviews and runs the push command.
