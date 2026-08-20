@@ -18,7 +18,7 @@ export function BidModal({
     projectTitle,
     onClose,
     onSubmitBid,
-}: BidModalProps): JSX.Element | null {
+}: BidModalProps): React.ReactNode {
     const [amount, setAmount] = useState<string>('');
     const [proposal, setProposal] = useState<string>('');
     const [submitting, setSubmitting] = useState<boolean>(false);
