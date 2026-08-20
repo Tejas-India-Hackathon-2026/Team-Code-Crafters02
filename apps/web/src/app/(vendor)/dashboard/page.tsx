@@ -187,6 +187,17 @@ export default function VendorDashboardPage() {
         // 3. Populate Buyer Chats & Inquiries (live inquiries + defaults)
         const liveInquiries: BuyerInquiry[] = [
             {
+                id: 'inq-rishav-case',
+                buyerName: 'Rishav Kumar',
+                productTitle: 'case',
+                price: 300,
+                category: 'woodworking',
+                status: 'IN_DISCUSSION',
+                lastMessage: 'Hi! I am interested in ordering this verified handcrafted product: "case" (₹300). Can you please confirm customization options and delivery schedule?',
+                updatedAt: 'Just now',
+                buyerId: 'buyer-rishav',
+            },
+            {
                 id: 'inq-1',
                 buyerName: 'Aarav Sharma',
                 productTitle: 'Hand-Carved Rajasthan Sheesham Armchair',
