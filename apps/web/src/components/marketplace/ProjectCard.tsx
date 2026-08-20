@@ -27,7 +27,7 @@ export function ProjectCard({
     deadline,
     buyerName = 'Artisan Buyer',
     status = 'OPEN',
-}: ProjectCardProps): JSX.Element {
+}: ProjectCardProps): React.ReactNode {
     return (
         <article
             aria-label={`Artisan Project: ${title}`}
