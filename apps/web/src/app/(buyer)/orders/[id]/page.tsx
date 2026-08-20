@@ -19,6 +19,7 @@ import {
     MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
+import { AccordionMotion } from '../../../../components/ui/accordion-motion';
 
 const ESCROW_STATES = [
     { key: 'AWAITING_PAYMENT', label: 'Awaiting Payment', icon: CreditCard },
@@ -341,33 +342,67 @@ export default function OrderTrackingPage() {
                         </div>
                     </div>
 
-                    {/* Financial & Logistics Summary */}
-                    <div className="flex flex-col gap-2.5 text-xs p-4 bg-[#FDFBF7] rounded-xl border border-[#E8E2D9] mb-5">
-                        <div className="flex justify-between">
-                            <span className="text-[#6B635B]">Product / Commission:</span>
-                            <span className="font-bold text-[#1E1B18]">{order.project?.title || 'Handcrafted Artisan Item'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-[#6B635B]">Maker / Workshop:</span>
-                            <span className="font-bold text-[#1E1B18]">{order.vendor?.full_name || 'Verified Maker'}</span>
-                        </div>
-                        <div className="flex justify-between">
-                            <span className="text-[#6B635B]">Gross Locked Escrow:</span>
-                            <span className="font-mono font-bold text-[#1E1B18]">₹{order.gross_amount?.toLocaleString('en-IN') || '10,000'}</span>
-                        </div>
-                        <div className="flex justify-between text-[#ED6C02]">
-                            <span>Section 194-O TDS (1%):</span>
-                            <span className="font-mono font-semibold">- ₹{order.withheld_tds?.toLocaleString('en-IN') || '100'}</span>
-                        </div>
-                        <div className="flex justify-between text-[#2E7D32] pt-2 border-t border-[#E8E2D9] font-bold">
-                            <span>Net Artisan Payout:</span>
-                            <span className="font-mono">₹{order.net_payout?.toLocaleString('en-IN') || '9,900'}</span>
-                        </div>
-                        <div className="flex justify-between pt-2 border-t border-[#E8E2D9] text-[11px]">
-                            <span className="text-[#6B635B]">Carrier & Tracking:</span>
-                            <span className="font-mono font-semibold text-[#1E1B18]">{order.carrier_code || 'DELHIVERY'} • {order.tracking_id || 'TRK-849201'}</span>
-                        </div>
-                    </div>
+                    {/* Financial & Logistics Summary in Spring Accordion */}
+                    <AccordionMotion
+                        items={[
+                            {
+                                id: 'order-financial-breakdown',
+                                title: 'Financial & Statutory Tax Breakdown',
+                                subtitle: 'Section 194-O TDS & Net Artisan Disbursal',
+                                icon: <Shield className="w-4 h-4" />,
+                                defaultOpen: true,
+                                content: (
+                                    <div className="flex flex-col gap-2 text-xs pt-1">
+                                        <div className="flex justify-between">
+                                            <span className="text-[#6B635B]">Product / Commission:</span>
+                                            <span className="font-bold text-[#1E1B18]">{order.project?.title || 'Handcrafted Artisan Item'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[#6B635B]">Maker / Workshop:</span>
+                                            <span className="font-bold text-[#1E1B18]">{order.vendor?.full_name || 'Verified Maker'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[#6B635B]">Gross Locked Escrow:</span>
+                                            <span className="font-mono font-bold text-[#1E1B18]">₹{order.gross_amount?.toLocaleString('en-IN') || '10,000'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-[#ED6C02]">
+                                            <span>Section 194-O TDS (1%):</span>
+                                            <span className="font-mono font-semibold">- ₹{order.withheld_tds?.toLocaleString('en-IN') || '100'}</span>
+                                        </div>
+                                        <div className="flex justify-between text-[#2E7D32] pt-2 border-t border-[#E8E2D9] font-bold">
+                                            <span>Net Artisan Payout:</span>
+                                            <span className="font-mono">₹{order.net_payout?.toLocaleString('en-IN') || '9,900'}</span>
+                                        </div>
+                                    </div>
+                                ),
+                            },
+                            {
+                                id: 'logistics-carrier-details',
+                                title: 'Carrier & Logistics Tracking',
+                                subtitle: `${order.carrier_code || 'DELHIVERY'} • ${order.tracking_id || 'TRK-849201'}`,
+                                icon: <Truck className="w-4 h-4" />,
+                                defaultOpen: true,
+                                content: (
+                                    <div className="flex flex-col gap-2 text-xs pt-1">
+                                        <div className="flex justify-between">
+                                            <span className="text-[#6B635B]">Carrier Partner:</span>
+                                            <span className="font-semibold text-[#1E1B18]">{order.carrier_code || 'DELHIVERY'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[#6B635B]">Consignment Tracking ID:</span>
+                                            <span className="font-mono font-bold text-[#1E1B18]">{order.tracking_id || 'TRK-849201'}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                            <span className="text-[#6B635B]">Inspection Buffer Window:</span>
+                                            <span className="font-semibold text-[#2E7D32]">48 Hours Post-Carrier Delivery</span>
+                                        </div>
+                                    </div>
+                                ),
+                            },
+                        ]}
+                        allowMultiple={true}
+                        className="mb-5"
+                    />
 
                     {/* 48-Hour Dispute Buffer Banner */}
                     {order.status === 'DELIVERED_PENDING_BUFFER' && (
