@@ -40,6 +40,7 @@ export function EscrowStatusBadge({ status, className = '' }: EscrowStatusBadgeP
 
     return (
         <span
+            role="status"
             aria-label={`Escrow Status: ${current.label}`}
             className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${current.bg} ${current.text} border border-current/10 ${className}`}
         >
