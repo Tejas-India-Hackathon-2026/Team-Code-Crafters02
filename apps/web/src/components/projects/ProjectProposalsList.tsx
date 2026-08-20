@@ -177,8 +177,17 @@ export function ProjectProposalsList({
                         return (
                             <div
                                 key={bid.id}
+                                tabIndex={0}
+                                role="button"
+                                aria-label={`Discuss bespoke proposal from ${bid.vendor?.full_name || 'Verified Artisan Maker'} of ₹${price.toLocaleString('en-IN')}`}
                                 onClick={() => handleOpenChat(bid)}
-                                className="p-4 bg-[#FDFBF7] border border-[#E8E2D9] rounded-xl transition-all hover:border-[#C85A32] hover:bg-white hover:shadow-card cursor-pointer group flex flex-col justify-between"
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault();
+                                        handleOpenChat(bid);
+                                    }
+                                }}
+                                className="p-4 bg-[#FDFBF7] border border-[#E8E2D9] rounded-xl transition-all hover:border-[#C85A32] hover:bg-white hover:shadow-card cursor-pointer group flex flex-col justify-between focus:outline-none focus:ring-2 focus:ring-[#C85A32]/40"
                             >
                                 <div>
                                     <div className="flex justify-between items-center mb-2">
