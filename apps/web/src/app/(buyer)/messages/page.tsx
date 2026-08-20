@@ -99,6 +99,8 @@ function MessagesContent() {
     const paramCategory = searchParams.get('category');
     const paramVideoUrl = searchParams.get('videoUrl');
     const paramVendorName = searchParams.get('vendorName');
+    const paramProjectId = searchParams.get('projectId');
+    const paramProposalText = searchParams.get('proposalText');
 
     useEffect(() => {
         const initChat = async () => {
@@ -212,6 +214,8 @@ function MessagesContent() {
             avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
             status: 'IN_DISCUSSION',
             startedAt: new Date().toISOString(),
+            projectId: paramProjectId || undefined,
+            proposalText: paramProposalText || undefined,
         };
 
         const targetConvId = `conv-${paramArtisanId}`;
@@ -221,13 +225,15 @@ function MessagesContent() {
             id: targetConvId,
             artisanId: paramArtisanId,
             artisanName: incomingDiscussion.artisanName,
-            craftCategory: incomingDiscussion.category,
+            craftCategory: incomingDiscussion.category === 'custom_commission' ? `Commission: ${paramProductTitle}` : incomingDiscussion.category,
             avatarUrl: incomingDiscussion.avatarUrl!,
             productTitle: paramProductTitle,
             price: incomingDiscussion.price,
             unread: true,
-            lastMessage: `Inquiry for ${paramProductTitle}`,
+            lastMessage: paramProposalText ? `Proposal note: "${paramProposalText}"` : `Inquiry for ${paramProductTitle}`,
             lastTimestamp: 'Just now',
+            projectId: paramProjectId || undefined,
+            proposalText: paramProposalText || undefined,
         };
 
         // Add or update in conversations list and persistent registry
@@ -346,6 +352,7 @@ function MessagesContent() {
                     vendorId: activeDiscussion?.artisanId || null,
                     grossAmount,
                     productTitle: activeDiscussion?.productTitle || 'Handcrafted Artisan Item',
+                    projectId: activeDiscussion?.projectId || null,
                     status: 'HELD_IN_ESCROW',
                 }),
             });
@@ -521,13 +528,17 @@ function MessagesContent() {
 
                     {/* Active Product Discussion Banner (when in active inquiry) */}
                     {activeDiscussion && activeDiscussion.status === 'IN_DISCUSSION' && (
-                        <div className="bg-[#FAF8F5] border-b border-[#E8E2D9] px-4 py-2.5 flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
+                        <div className="bg-[#FAF8F5] border-b border-[#E8E2D9] px-4 py-2.5 flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-2 min-w-0 flex-wrap">
                                 <span className="text-[10px] font-bold text-[#6B635B] uppercase tracking-wider shrink-0">
-                                    Active Inquiry:
+                                    {activeDiscussion.category === 'custom_commission' ? 'Bespoke Commission:' : 'Active Inquiry:'}
                                 </span>
-                                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-[#FFF4E5] text-[#ED6C02] shrink-0">
-                                    ● In Discussion
+                                <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shrink-0 ${
+                                    activeDiscussion.category === 'custom_commission'
+                                        ? 'bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/20'
+                                        : 'bg-[#FFF4E5] text-[#ED6C02]'
+                                }`}>
+                                    ● {activeDiscussion.category === 'custom_commission' ? 'Proposal Discussion' : 'In Discussion'}
                                 </span>
                                 <span className="text-xs font-bold text-[#1E1B18] truncate">
                                     {activeDiscussion.productTitle}
@@ -539,7 +550,7 @@ function MessagesContent() {
                             <div className="flex items-center gap-1.5 shrink-0">
                                 <button
                                     onClick={handleFinalizeOrder}
-                                    className="btn-primary text-[11px] py-1 px-2.5 flex items-center gap-1 font-semibold"
+                                    className="btn-primary text-[11px] py-1 px-3 flex items-center gap-1 font-semibold cursor-pointer"
                                     title="Finalize order and generate quote"
                                 >
                                     <Check className="w-3 h-3" />
@@ -547,7 +558,7 @@ function MessagesContent() {
                                 </button>
                                 <button
                                     onClick={handleCancelDiscussion}
-                                    className="btn-ghost text-[11px] py-1 px-2 text-[#D32F2F] hover:bg-[#FDEDED]"
+                                    className="btn-ghost text-[11px] py-1 px-2 text-[#D32F2F] hover:bg-[#FDEDED] cursor-pointer"
                                     title="Close inquiry"
                                 >
                                     <X className="w-3 h-3" />

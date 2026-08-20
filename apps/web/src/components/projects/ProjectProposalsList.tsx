@@ -177,33 +177,53 @@ export function ProjectProposalsList({
                         return (
                             <div
                                 key={bid.id}
-                                className="p-3.5 bg-[#FDFBF7] border border-[#E8E2D9] rounded-xl transition-all hover:border-[#C85A32]/40 hover:shadow-xs"
+                                onClick={() => handleOpenChat(bid)}
+                                className="p-4 bg-[#FDFBF7] border border-[#E8E2D9] rounded-xl transition-all hover:border-[#C85A32] hover:bg-white hover:shadow-card cursor-pointer group flex flex-col justify-between"
                             >
-                                <div className="flex justify-between items-center mb-1.5">
-                                    <div className="flex items-center gap-1.5">
-                                        <span className="text-xs font-bold text-[#1E1B18]">
-                                            {bid.vendor?.full_name || 'Verified Artisan Maker'}
-                                        </span>
-                                        <span className="text-[10px] font-semibold bg-[#EDF7ED] text-[#2E7D32] px-1.5 py-0.5 rounded flex items-center gap-0.5">
-                                            <ShieldCheck className="w-2.5 h-2.5" />
-                                            Verified
+                                <div>
+                                    <div className="flex justify-between items-center mb-2">
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="text-xs font-bold text-[#1E1B18] group-hover:text-[#C85A32] transition-colors">
+                                                {bid.vendor?.full_name || 'Verified Artisan Maker'}
+                                            </span>
+                                            <span className="text-[10px] font-semibold bg-[#EDF7ED] text-[#2E7D32] px-1.5 py-0.5 rounded flex items-center gap-0.5 border border-[#2E7D32]/20">
+                                                <ShieldCheck className="w-2.5 h-2.5" />
+                                                Verified Maker
+                                            </span>
+                                        </div>
+                                        <span className="text-sm font-bold text-[#C85A32] font-mono">
+                                            ₹{price.toLocaleString('en-IN')}
                                         </span>
                                     </div>
-                                    <span className="text-sm font-bold text-[#C85A32] font-mono">
-                                        ₹{price.toLocaleString('en-IN')}
-                                    </span>
+
+                                    <p className="text-xs text-[#6B635B] leading-relaxed mb-3 whitespace-pre-wrap">
+                                        {cleanText}
+                                    </p>
                                 </div>
 
-                                <p className="text-xs text-[#6B635B] leading-relaxed mb-2 whitespace-pre-wrap">
-                                    {cleanText}
-                                </p>
+                                <div className="pt-2.5 border-t border-[#E8E2D9]/70 flex items-center justify-between flex-wrap gap-2">
+                                    {turnaround ? (
+                                        <div className="flex items-center gap-1 text-[11px] text-[#6B635B] font-medium">
+                                            <Clock className="w-3.5 h-3.5 text-[#C85A32]" />
+                                            <span>Timeline: {turnaround}</span>
+                                        </div>
+                                    ) : (
+                                        <span className="text-[11px] text-[#6B635B]">Flexible Delivery</span>
+                                    )}
 
-                                {turnaround && (
-                                    <div className="flex items-center gap-1 text-[11px] text-[#6B635B] font-medium pt-1.5 border-t border-[#E8E2D9]/60">
-                                        <Clock className="w-3 h-3 text-[#C85A32]" />
-                                        <span>Estimated Dispatch: {turnaround}</span>
-                                    </div>
-                                )}
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            handleOpenChat(bid);
+                                        }}
+                                        className="btn-primary text-xs py-1.5 px-3 flex items-center gap-1.5 font-semibold group-hover:scale-[1.02] transition-transform cursor-pointer"
+                                    >
+                                        <MessageSquare className="w-3.5 h-3.5" />
+                                        <span>Discuss & Finalize</span>
+                                        <ArrowRight className="w-3 h-3" />
+                                    </button>
+                                </div>
                             </div>
                         );
                     })}
