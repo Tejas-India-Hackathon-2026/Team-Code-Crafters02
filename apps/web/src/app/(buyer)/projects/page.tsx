@@ -26,6 +26,7 @@ interface CustomProject {
     budget_max: number;
     deadline: string;
     status: string;
+    image_url?: string | null;
     created_at: string;
 }
 
@@ -54,8 +55,26 @@ export default function ProjectsDirectoryPage() {
             .select('*')
             .order('created_at', { ascending: false });
 
+        let loaded: CustomProject[] = [];
+
         if (data && data.length > 0) {
-            setProjects(data as CustomProject[]);
+            loaded = data as CustomProject[];
+        }
+
+        // Merge locally cached projects
+        if (typeof window !== 'undefined') {
+            try {
+                const cached = JSON.parse(localStorage.getItem('karigar_custom_projects_cache') || '[]');
+                if (Array.isArray(cached) && cached.length > 0) {
+                    const dbIds = new Set(loaded.map((p) => p.id));
+                    const freshCached = cached.filter((c: any) => !dbIds.has(c.id));
+                    loaded = [...freshCached, ...loaded];
+                }
+            } catch (e) {}
+        }
+
+        if (loaded.length > 0) {
+            setProjects(loaded);
         } else {
             // Seed default projects for presentation if table is empty
             setProjects([
@@ -234,6 +253,9 @@ export default function ProjectsDirectoryPage() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {filteredProjects.map((proj) => {
                             const isOwner = user && (user.id === proj.buyer_id || proj.buyer_id === 'sample-buyer');
+                            const refImgMatch = proj.description?.match(/\[REFERENCE_IMAGE:\s*(.*?)\]/);
+                            const projImageUrl = proj.image_url || (refImgMatch ? refImgMatch[1] : null);
+                            const cleanDescription = proj.description?.replace(/\[REFERENCE_IMAGE:\s*(.*?)\]/, '').trim();
 
                             return (
                                 <div
@@ -254,11 +276,27 @@ export default function ProjectsDirectoryPage() {
                                             </span>
                                         </div>
 
+                                        {/* Reference Sketch / Photo */}
+                                        {projImageUrl && (
+                                            <div className="mb-3 rounded-xl overflow-hidden border border-[#E8E2D9] bg-[#FAF8F5] relative group">
+                                                <img
+                                                    src={projImageUrl}
+                                                    alt={`Reference sketch for ${proj.title}`}
+                                                    className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                                                    onClick={() => window.open(projImageUrl, '_blank')}
+                                                />
+                                                <div className="bg-[#1E1B18]/80 backdrop-blur-xs text-white px-2.5 py-1 text-[10px] flex items-center justify-between absolute bottom-0 left-0 right-0">
+                                                    <span className="font-medium">📷 Reference Sketch</span>
+                                                    <span className="text-[#F7EAD9] underline cursor-pointer">Click to enlarge</span>
+                                                </div>
+                                            </div>
+                                        )}
+
                                         <h3 className="font-display font-bold text-base text-[#1E1B18] mb-1.5 line-clamp-1">
                                             {proj.title}
                                         </h3>
                                         <p className="text-xs text-[#6B635B] line-clamp-3 leading-relaxed mb-4">
-                                            {proj.description}
+                                            {cleanDescription}
                                         </p>
 
                                         <div className="flex items-center justify-between pt-3 border-t border-[#F3EFEA] text-xs">
