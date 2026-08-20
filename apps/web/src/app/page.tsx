@@ -10,7 +10,7 @@ const FEATURED_CATEGORIES = [
     { id: 'painting', label: 'Folk Art & Painting', icon: '🎨', reelsCount: '12 Reels', desc: 'Madhubani, Pattachitra & Pichwai canvases' },
 ];
 
-export default function HomePage(): JSX.Element {
+export default function HomePage(): React.ReactNode {
     return (
         <main className="min-h-screen bg-[#FDFBF7]" aria-label="Main marketplace landing content">
             {/* Hero Section */}
