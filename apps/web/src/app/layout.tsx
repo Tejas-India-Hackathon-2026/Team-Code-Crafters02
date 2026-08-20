@@ -31,7 +31,7 @@ export default function RootLayout({
     children,
 }: {
     children: React.ReactNode;
-}): JSX.Element {
+}): React.ReactNode {
     return (
         <html lang="en" suppressHydrationWarning className={`${plusJakartaSans.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
             <body id="__karigar_root" className="bg-[#FDFBF7] text-[#1E1B18] antialiased">
