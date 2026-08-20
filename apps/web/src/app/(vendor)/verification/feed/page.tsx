@@ -21,6 +21,8 @@ import {
     Filter,
 } from 'lucide-react';
 import Link from 'next/link';
+import { SlidingTabs } from '../../../../components/ui/sliding-tabs';
+import { AnimatedNumber } from '../../../../components/ui/animated-number';
 
 const CRAFT_CATEGORIES = [
     { id: 'all', label: 'All Crafts', icon: '✨' },
@@ -435,35 +437,22 @@ export default function ReelFeedPage() {
                     </div>
                 </div>
 
-                {/* Horizontal Category Filter Pills */}
-                <div className="max-w-7xl mx-auto mt-3 overflow-x-auto pb-1 flex items-center gap-2 no-scrollbar">
-                    {CRAFT_CATEGORIES.map((cat) => {
-                        const isSelected = activeCategory === cat.id;
-                        const count =
-                            cat.id === 'all'
-                                ? reels.length
-                                : reels.filter((r) => r.extracted_metadata?.category === cat.id).length;
-
-                        return (
-                            <button
-                                key={cat.id}
-                                onClick={() => setActiveCategory(cat.id)}
-                                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
-                                    isSelected
-                                        ? 'bg-[#C85A32] text-white border-[#C85A32] shadow-sm'
-                                        : 'bg-white text-[#6B635B] border-[#E8E2D9] hover:border-[#C85A32]/50 hover:text-[#1E1B18]'
-                                }`}
-                            >
-                                <span>{cat.icon}</span>
-                                <span>{cat.label}</span>
-                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                                    isSelected ? 'bg-white/20 text-white' : 'bg-[#F3EFEA] text-[#6B635B]'
-                                }`}>
-                                    {count}
-                                </span>
-                            </button>
-                        );
-                    })}
+                {/* Horizontal Category Filter Pills with Spring Animation */}
+                <div className="max-w-7xl mx-auto mt-3">
+                    <SlidingTabs
+                        tabs={CRAFT_CATEGORIES.map((cat) => ({
+                            id: cat.id,
+                            label: cat.label,
+                            icon: <span>{cat.icon}</span>,
+                            badge:
+                                cat.id === 'all'
+                                    ? reels.length
+                                    : reels.filter((r) => r.extracted_metadata?.category === cat.id).length || undefined,
+                        }))}
+                        activeTab={activeCategory}
+                        onChange={(catId) => setActiveCategory(catId)}
+                        className="bg-white/80 backdrop-blur-md border border-[#E8E2D9] p-1.5"
+                    />
                 </div>
             </div>
 
@@ -514,10 +503,12 @@ export default function ReelFeedPage() {
                                             className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
                                         />
 
-                                        {/* AI Verified Badge Overlay */}
+                                        {/* AI Verified Badge Overlay with Smooth Animated Counter */}
                                         <div className="absolute top-3 left-3 z-10">
-                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${confidence.color}`}>
-                                                {confidence.label}
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm flex items-center gap-1 ${confidence.color}`}>
+                                                <ShieldCheck className="w-3 h-3 shrink-0" />
+                                                <AnimatedNumber value={Math.round((reel.ai_confidence_score ?? reel.confidence_score ?? 0.95) * 100)} suffix="%" />
+                                                <span>AI Verified</span>
                                             </span>
                                         </div>
 
