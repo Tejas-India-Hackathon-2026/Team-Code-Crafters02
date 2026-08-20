@@ -15,6 +15,8 @@ import {
     LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
+import { KintoCard, KintoBadge } from '../ui/kinto-card';
+import { AnimatedNumber } from '../ui/animated-number';
 
 const CRAFT_CATEGORIES = [
     { id: 'woodworking', label: 'Woodworking & Carving', icon: '🪵' },
@@ -140,10 +142,10 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
         const summary = resultData.aiSummary || 'AI evaluated the craftsmanship and branding.';
 
         return (
-            <div className="card p-8 bg-white text-center w-full max-w-lg animate-slide-up shadow-card border border-[#E8E2D9]">
+            <KintoCard glow className="p-8 text-center w-full max-w-lg animate-slide-up shadow-xl border-stone-200/80">
                 {/* Status Icon */}
                 <div
-                    className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                    className={`w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4 ${
                         isVerified
                             ? 'bg-[#EDF7ED] text-[#2E7D32]'
                             : isPendingReview
@@ -161,27 +163,31 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                 </div>
 
                 {/* Score & Tier Badge */}
-                <div
-                    className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold mb-3 ${
-                        isVerified
-                            ? 'bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/20'
-                            : isPendingReview
-                            ? 'bg-[#FFF4E5] text-[#ED6C02] border border-[#ED6C02]/20'
-                            : 'bg-[#FDEDED] text-[#D32F2F] border border-[#D32F2F]/20'
-                    }`}
-                >
-                    <Sparkles className="w-3.5 h-3.5" />
-                    <span>
-                        {isVerified
-                            ? `✓ ${score}% AI Confidence (Auto-Verified)`
-                            : isPendingReview
-                            ? `⏳ ${score}% AI Score (85%–90% HITL Review Queue)`
-                            : `❌ ${score}% AI Score (Below 85% Threshold)`}
-                    </span>
+                <div className="inline-flex items-center gap-1.5 mb-3">
+                    <KintoBadge
+                        variant={isVerified ? 'success' : isPendingReview ? 'warning' : 'danger'}
+                        dot={true}
+                    >
+                        <span className="flex items-center gap-1">
+                            {isVerified ? (
+                                <>
+                                    ✓ <AnimatedNumber value={score} suffix="%" /> AI Confidence (Auto-Verified)
+                                </>
+                            ) : isPendingReview ? (
+                                <>
+                                    ⏳ <AnimatedNumber value={score} suffix="%" /> AI Score (HITL Queue)
+                                </>
+                            ) : (
+                                <>
+                                    ❌ <AnimatedNumber value={score} suffix="%" /> AI Score (Below 85%)
+                                </>
+                            )}
+                        </span>
+                    </KintoBadge>
                 </div>
 
                 {/* Heading */}
-                <h2 className="text-xl font-bold text-[#1E1B18] font-display mb-2">
+                <h2 className="text-xl font-bold text-stone-950 font-display mb-2">
                     {isVerified
                         ? 'Product Reel Published & Verified!'
                         : isPendingReview
@@ -190,7 +196,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                 </h2>
 
                 {/* Description */}
-                <p className="text-xs text-[#6B635B] mb-6 leading-relaxed">
+                <p className="text-xs text-stone-600 mb-6 leading-relaxed">
                     {isVerified ? (
                         <>
                             Gemini Multimodal Vision authenticated your craftsmanship and maker branding. Assigned batch watermark{' '}
@@ -216,7 +222,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                     {isVerified && (
                         <Link
                             href="/verification/feed"
-                            className="btn-primary text-xs py-2.5 px-5 flex items-center justify-center gap-1.5 font-semibold"
+                            className="btn-primary text-xs py-2.5 px-5 rounded-full flex items-center justify-center gap-1.5 font-semibold font-mono shadow-xs hover:shadow-md transition-all"
                         >
                             <span>View in Marketplace Feed</span>
                             <ArrowRight className="w-3.5 h-3.5" />
@@ -225,7 +231,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                     {isPendingReview && (
                         <Link
                             href="/dashboard"
-                            className="btn-primary text-xs py-2.5 px-5 flex items-center justify-center gap-1.5 font-semibold"
+                            className="btn-primary text-xs py-2.5 px-5 rounded-full flex items-center justify-center gap-1.5 font-semibold font-mono shadow-xs hover:shadow-md transition-all"
                         >
                             <LayoutDashboard className="w-3.5 h-3.5" />
                             <span>Go to Maker Dashboard</span>
@@ -242,174 +248,176 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                             setProgress(0);
                             setStatusMessage('');
                         }}
-                        className="btn-ghost text-xs py-2.5 px-5"
+                        className="btn-ghost text-xs py-2.5 px-5 rounded-full bg-white border border-stone-200/90 text-stone-700 hover:bg-stone-100 transition-all font-mono"
                     >
                         {isVerified || isPendingReview ? 'Upload Another Product' : 'Try Again'}
                     </button>
                 </div>
-            </div>
+            </KintoCard>
         );
     }
 
     return (
-        <form onSubmit={handleUpload} aria-label="Artisan product details and reel upload form" className="card p-6 bg-white w-full max-w-lg shadow-card border border-[#E8E2D9] flex flex-col gap-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-[#1E1B18] font-display uppercase tracking-wider">
-                    Product Details & Process Reel
-                </h2>
-                <span className="text-[10px] bg-[#FAF8F5] border border-[#E8E2D9] text-[#6B635B] px-2 py-0.5 rounded-full font-mono">
-                    Tiered AI Inspection
-                </span>
-            </div>
-
-            {/* Tier Guidelines Helper Box */}
-            <div className="bg-[#FAF8F5] border border-[#E8E2D9] rounded-xl p-3 text-[11px] text-[#6B635B] flex flex-col gap-1">
-                <div className="flex items-center justify-between text-[#1E1B18] font-semibold">
-                    <span>AI Confidence Tier Rules:</span>
+        <form onSubmit={handleUpload} aria-label="Artisan product details and reel upload form" className="w-full max-w-lg">
+            <KintoCard glow className="p-6 sm:p-7 flex flex-col gap-4 border-stone-200/80">
+                <div className="flex items-center justify-between">
+                    <h2 className="text-sm font-bold text-stone-950 font-display uppercase tracking-wider">
+                        Product Details & Process Reel
+                    </h2>
+                    <KintoBadge variant="brand">
+                        Tiered AI Inspection
+                    </KintoBadge>
                 </div>
-                <div className="grid grid-cols-3 gap-1.5 mt-1 text-[10px] text-center font-medium">
-                    <span className="bg-[#FDEDED] text-[#D32F2F] p-1 rounded">{'< 85%: Reject'}</span>
-                    <span className="bg-[#FFF4E5] text-[#ED6C02] p-1 rounded">{'85-89%: HITL Review'}</span>
-                    <span className="bg-[#EDF7ED] text-[#2E7D32] p-1 rounded">{'≥ 90%: Auto-Verify'}</span>
-                </div>
-            </div>
 
-            {/* 1. Product Title */}
-            <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18] mb-1.5">
-                    Product Name / Title <span className="text-[#D32F2F]">*</span>
-                </label>
-                <div className="relative flex items-center">
-                    <Package className="absolute left-3.5 w-4 h-4 text-[#6B635B] pointer-events-none" />
-                    <input
-                        type="text"
-                        required
-                        placeholder="e.g. Royal Hand-Carved Sheesham Chair"
-                        value={productTitle}
-                        onChange={(e) => setProductTitle(e.target.value)}
-                        style={{ paddingLeft: '2.5rem' }}
-                        className="input-base"
-                    />
+                {/* Tier Guidelines Helper Box */}
+                <div className="bg-stone-50/80 border border-stone-200/80 rounded-2xl p-3.5 text-[11px] text-stone-600 flex flex-col gap-1.5">
+                    <div className="flex items-center justify-between text-stone-900 font-semibold font-mono text-[10px] uppercase tracking-wider">
+                        <span>AI Confidence Tier Thresholds:</span>
+                    </div>
+                    <div className="grid grid-cols-3 gap-2 mt-0.5 text-[10px] text-center font-mono font-medium">
+                        <span className="bg-[#FDEDED]/80 text-[#D32F2F] border border-[#D32F2F]/20 p-1 rounded-lg">{'< 85%: Reject'}</span>
+                        <span className="bg-[#FFF4E5]/80 text-[#ED6C02] border border-[#ED6C02]/20 p-1 rounded-lg">{'85-89%: HITL Review'}</span>
+                        <span className="bg-[#EDF7ED]/80 text-[#2E7D32] border border-[#2E7D32]/20 p-1 rounded-lg">{'≥ 90%: Auto-Verify'}</span>
+                    </div>
                 </div>
-            </div>
 
-            {/* 2. Craft Category */}
-            <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18] mb-1.5">
-                    Product Craft Category <span className="text-[#D32F2F]">*</span>
-                </label>
-                <div className="relative flex items-center">
-                    <Tag className="absolute left-3.5 w-4 h-4 text-[#6B635B] pointer-events-none" />
-                    <select
-                        value={category}
-                        onChange={(e) => setCategory(e.target.value)}
-                        style={{ paddingLeft: '2.5rem' }}
-                        className="input-base cursor-pointer"
-                    >
-                        {CRAFT_CATEGORIES.map((cat) => (
-                            <option key={cat.id} value={cat.id}>
-                                {cat.icon} {cat.label}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-            </div>
-
-            {/* 3. Estimated Price & Description */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* 1. Product Title */}
                 <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18] mb-1.5">
-                        Price (INR ₹)
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-stone-900 mb-1.5 font-mono">
+                        Product Name / Title <span className="text-[#D32F2F]">*</span>
                     </label>
                     <div className="relative flex items-center">
-                        <DollarSign className="absolute left-3.5 w-4 h-4 text-[#6B635B] pointer-events-none" />
+                        <Package className="absolute left-3.5 w-4 h-4 text-stone-400 pointer-events-none" />
                         <input
-                            type="number"
-                            placeholder="e.g. 2400"
-                            value={price}
-                            onChange={(e) => setPrice(e.target.value)}
-                            style={{ paddingLeft: '2.5rem' }}
-                            className="input-base"
-                        />
-                    </div>
-                </div>
-
-                <div>
-                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18] mb-1.5">
-                        Item Description
-                    </label>
-                    <input
-                        type="text"
-                        placeholder="e.g. Seasoned teak, hand-polished"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        className="input-base"
-                    />
-                </div>
-            </div>
-
-            {/* 4. 9:16 Video File Dropzone */}
-            <div>
-                <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18] mb-1.5">
-                    Upload 9:16 Workshop Video <span className="text-[#D32F2F]">*</span>
-                </label>
-                <div className="border-2 border-dashed border-[#E8E2D9] hover:border-[#C85A32]/60 bg-[#FDFBF7] rounded-xl p-5 text-center flex flex-col items-center justify-center transition-colors">
-                    <UploadCloud className="w-10 h-10 text-[#C85A32] mb-2" />
-                    <p className="text-xs font-bold text-[#1E1B18]">
-                        {file ? file.name : 'Select 9:16 Vertical Video (30–60s)'}
-                    </p>
-                    <p className="text-[10px] text-[#6B635B] mt-0.5">
-                        MP4 / MOV up to 100 MB. Ensure physical stamp/logo or on-screen watermark is visible.
-                    </p>
-                    <label className="btn-ghost text-xs py-1.5 px-4 mt-3 cursor-pointer">
-                        {file ? 'Change Video' : 'Choose Video File'}
-                        <input
-                            id="reel-video-file-input"
-                            type="file"
+                            type="text"
                             required
-                            accept="video/mp4,video/quicktime,video/webm"
-                            onChange={(e) => setFile(e.target.files?.[0] || null)}
-                            className="hidden"
+                            placeholder="e.g. Royal Hand-Carved Sheesham Chair"
+                            value={productTitle}
+                            onChange={(e) => setProductTitle(e.target.value)}
+                            style={{ paddingLeft: '2.5rem' }}
+                            className="input-base bg-white/90 border-stone-200/90 rounded-xl"
                         />
+                    </div>
+                </div>
+
+                {/* 2. Craft Category */}
+                <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-stone-900 mb-1.5 font-mono">
+                        Product Craft Category <span className="text-[#D32F2F]">*</span>
                     </label>
+                    <div className="relative flex items-center">
+                        <Tag className="absolute left-3.5 w-4 h-4 text-stone-400 pointer-events-none" />
+                        <select
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            style={{ paddingLeft: '2.5rem' }}
+                            className="input-base bg-white/90 border-stone-200/90 rounded-xl cursor-pointer"
+                        >
+                            {CRAFT_CATEGORIES.map((cat) => (
+                                <option key={cat.id} value={cat.id}>
+                                    {cat.icon} {cat.label}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                 </div>
-            </div>
 
-            {/* Upload Progress Bar */}
-            {uploading && (
-                <div className="w-full">
-                    <div className="w-full bg-[#F3EFEA] rounded-full h-2 overflow-hidden">
-                        <div
-                            className="bg-[#C85A32] h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${progress}%` }}
+                {/* 3. Estimated Price & Description */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-stone-900 mb-1.5 font-mono">
+                            Price (INR ₹)
+                        </label>
+                        <div className="relative flex items-center">
+                            <DollarSign className="absolute left-3.5 w-4 h-4 text-stone-400 pointer-events-none" />
+                            <input
+                                type="number"
+                                placeholder="e.g. 2400"
+                                value={price}
+                                onChange={(e) => setPrice(e.target.value)}
+                                style={{ paddingLeft: '2.5rem' }}
+                                className="input-base bg-white/90 border-stone-200/90 rounded-xl font-mono"
+                            />
+                        </div>
+                    </div>
+
+                    <div>
+                        <label className="block text-xs font-semibold uppercase tracking-wider text-stone-900 mb-1.5 font-mono">
+                            Item Description
+                        </label>
+                        <input
+                            type="text"
+                            placeholder="e.g. Seasoned teak, hand-polished"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            className="input-base bg-white/90 border-stone-200/90 rounded-xl"
                         />
                     </div>
-                    <div className="flex justify-between items-center text-[10px] text-[#6B635B] mt-1">
-                        <span>{progress < 100 ? 'Uploading video...' : 'Gemini AI calculating tiered confidence...'}</span>
-                        <span>{progress}%</span>
+                </div>
+
+                {/* 4. 9:16 Video File Dropzone */}
+                <div>
+                    <label className="block text-xs font-semibold uppercase tracking-wider text-stone-900 mb-1.5 font-mono">
+                        Upload 9:16 Workshop Video <span className="text-[#D32F2F]">*</span>
+                    </label>
+                    <div className="border-2 border-dashed border-stone-300 hover:border-[#C85A32]/60 bg-stone-50/60 rounded-2xl p-6 text-center flex flex-col items-center justify-center transition-all">
+                        <UploadCloud className="w-10 h-10 text-[#C85A32] mb-2" />
+                        <p className="text-xs font-bold text-stone-900">
+                            {file ? file.name : 'Select 9:16 Vertical Video (30–60s)'}
+                        </p>
+                        <p className="text-[10px] text-stone-500 mt-1 max-w-xs leading-normal">
+                            MP4 / MOV up to 100 MB. Ensure physical stamp/logo or on-screen watermark is visible.
+                        </p>
+                        <label className="btn-ghost text-xs py-1.5 px-4 mt-3 rounded-full bg-white border border-stone-200 shadow-2xs cursor-pointer hover:bg-stone-100 transition-all font-mono">
+                            {file ? 'Change Video' : 'Choose Video File'}
+                            <input
+                                id="reel-video-file-input"
+                                type="file"
+                                required
+                                accept="video/mp4,video/quicktime,video/webm"
+                                onChange={(e) => setFile(e.target.files?.[0] || null)}
+                                className="hidden"
+                            />
+                        </label>
                     </div>
                 </div>
-            )}
 
-            {/* Status Message */}
-            {statusMessage && (
-                <p className={`text-xs p-2.5 rounded-lg text-center font-medium ${
-                    statusMessage.startsWith('Error')
-                        ? 'bg-[#FDEDED] text-[#D32F2F] border border-[#F5C2C7]'
-                        : 'bg-[#FDFBF7] text-[#1E1B18] border border-[#E8E2D9]'
-                }`}>
-                    {statusMessage}
-                </p>
-            )}
+                {/* Upload Progress Bar */}
+                {uploading && (
+                    <div className="w-full">
+                        <div className="w-full bg-stone-100 rounded-full h-2 overflow-hidden">
+                            <div
+                                className="bg-[#C85A32] h-2 rounded-full transition-all duration-300"
+                                style={{ width: `${progress}%` }}
+                            />
+                        </div>
+                        <div className="flex justify-between items-center text-[10px] text-stone-500 mt-1 font-mono">
+                            <span>{progress < 100 ? 'Uploading video...' : 'Gemini AI calculating tiered confidence...'}</span>
+                            <span>{progress}%</span>
+                        </div>
+                    </div>
+                )}
 
-            {/* Submit Button */}
-            <button
-                type="submit"
-                disabled={!file || uploading}
-                className="btn-primary w-full py-3 mt-1 font-semibold text-sm cursor-pointer disabled:opacity-50"
-            >
-                {uploading ? 'Analyzing Craftsmanship...' : 'Upload & Verify Product Reel'}
-            </button>
+                {/* Status Message */}
+                {statusMessage && (
+                    <p className={`text-xs p-3 rounded-xl text-center font-medium font-mono ${
+                        statusMessage.startsWith('Error')
+                            ? 'bg-[#FDEDED] text-[#D32F2F] border border-[#F5C2C7]'
+                            : 'bg-stone-50 text-stone-900 border border-stone-200'
+                    }`}>
+                        {statusMessage}
+                    </p>
+                )}
+
+                {/* Submit Button */}
+                <button
+                    type="submit"
+                    disabled={!file || uploading}
+                    className="btn-primary w-full py-3.5 mt-1 font-semibold text-sm rounded-full cursor-pointer disabled:opacity-50 shadow-xs hover:shadow-md transition-all font-mono"
+                >
+                    {uploading ? 'Analyzing Craftsmanship...' : 'Upload & Verify Product Reel'}
+                </button>
+            </KintoCard>
         </form>
     );
 }

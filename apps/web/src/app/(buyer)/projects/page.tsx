@@ -16,6 +16,7 @@ import {
     Filter,
 } from 'lucide-react';
 import Link from 'next/link';
+import { KintoCard, KintoBadge } from '../../../components/ui/kinto-card';
 
 interface CustomProject {
     id: string;
@@ -179,36 +180,43 @@ export default function ProjectsDirectoryPage() {
     });
 
     return (
-        <main className="min-h-screen bg-[#FDFBF7] py-10 px-4 sm:px-6">
-            <div className="max-w-5xl mx-auto flex flex-col gap-6">
+        <main className="min-h-screen bg-[#FAF7F2] text-stone-900 py-12 px-4 sm:px-6 relative overflow-hidden">
+            {/* Dot Matrix Atmosphere */}
+            <div
+                aria-hidden="true"
+                className="pointer-events-none absolute inset-0 opacity-[0.14] kinto-dot-grid [mask-image:radial-gradient(ellipse_60%_50%_at_50%_30%,#000_70%,transparent_100%)]"
+            />
+
+            <div className="max-w-5xl mx-auto flex flex-col gap-8 relative">
                 {/* Header */}
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white border border-[#E8E2D9] rounded-2xl p-6 shadow-card">
-                    <div>
-                        <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#FFF4E5] text-[#ED6C02] text-xs font-bold mb-2">
-                            <FolderOpen className="w-3.5 h-3.5" />
-                            <span>Custom Project Commissions</span>
+                <KintoCard glow className="p-6 sm:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+                    <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2">
+                            <KintoBadge variant="brand" dot={true}>
+                                BESPOKE CRAFT COMMISSIONS
+                            </KintoBadge>
                         </div>
-                        <h1 className="text-2xl font-bold text-[#1E1B18] font-display">
+                        <h1 className="text-2xl sm:text-3xl font-extrabold text-stone-950 font-display tracking-tight">
                             Custom Artisan Commissions
                         </h1>
-                        <p className="text-xs text-[#6B635B] mt-1">
-                            Post your custom bespoke requirements, receive bids from verified local artisans, or manage your active commissions.
+                        <p className="text-xs sm:text-sm text-stone-600 leading-relaxed max-w-xl">
+                            Post bespoke project briefs with reference sketches. Verified local artisans submit transparent bids protected by dual-rail escrow.
                         </p>
                     </div>
 
                     <Link
                         href="/projects/new"
-                        className="btn-primary text-xs py-2.5 px-4 font-semibold flex items-center gap-1.5 shrink-0 self-start sm:self-auto"
+                        className="btn-primary text-xs py-3 px-5 rounded-full font-semibold flex items-center gap-1.5 shrink-0 self-start sm:self-auto shadow-xs hover:shadow-md transition-all font-mono"
                     >
                         <Plus className="w-4 h-4" />
                         <span>Post New Commission</span>
                     </Link>
-                </div>
+                </KintoCard>
 
                 {/* Feedback Notification */}
                 {feedbackMsg && (
-                    <div className="p-3 bg-[#EDF7ED] border border-[#2E7D32]/30 text-[#2E7D32] rounded-xl text-xs font-semibold flex items-center gap-2 animate-fade-in shadow-sm">
-                        <CheckCircle2 className="w-4 h-4 shrink-0" />
+                    <div className="p-3.5 bg-emerald-500/10 border border-emerald-600/30 text-emerald-800 rounded-2xl text-xs font-semibold flex items-center gap-2 animate-fade-in shadow-xs font-mono">
+                        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
                         <span>{feedbackMsg}</span>
                     </div>
                 )}
@@ -216,29 +224,29 @@ export default function ProjectsDirectoryPage() {
                 {/* Filters & Search */}
                 <div className="flex flex-col sm:flex-row gap-3 items-center justify-between">
                     <div className="relative w-full sm:w-80">
-                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-[#6B635B]" />
+                        <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
                         <input
                             type="text"
                             placeholder="Search commissions..."
                             value={searchQuery}
                             onChange={(e) => setSearchQuery(e.target.value)}
                             style={{ paddingLeft: '2.5rem' }}
-                            className="input-base text-xs py-2"
+                            className="input-base text-xs py-2.5 bg-white/90 border-stone-200/90 rounded-full font-mono"
                         />
                     </div>
 
                     <div className="flex items-center gap-2 self-start sm:self-auto">
-                        <span className="text-xs font-semibold text-[#6B635B] flex items-center gap-1">
-                            <Filter className="w-3.5 h-3.5" /> Status:
+                        <span className="text-xs font-semibold text-stone-500 flex items-center gap-1 font-mono">
+                            <Filter className="w-3.5 h-3.5 text-[#C85A32]" /> Status:
                         </span>
                         {['ALL', 'OPEN', 'COMPLETED'].map((st) => (
                             <button
                                 key={st}
                                 onClick={() => setStatusFilter(st)}
-                                className={`px-3 py-1 rounded-full text-xs font-semibold cursor-pointer border transition-all ${
+                                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold cursor-pointer border transition-all font-mono ${
                                     statusFilter === st
-                                        ? 'bg-[#1E1B18] text-white border-[#1E1B18]'
-                                        : 'bg-white text-[#6B635B] border-[#E8E2D9] hover:border-[#1E1B18]'
+                                        ? 'bg-stone-900 text-white border-stone-900 shadow-xs'
+                                        : 'bg-white/80 text-stone-600 border-stone-200 hover:border-stone-400'
                                 }`}
                             >
                                 {st}
@@ -249,19 +257,19 @@ export default function ProjectsDirectoryPage() {
 
                 {/* Projects Grid */}
                 {loading ? (
-                    <div className="p-12 text-center text-xs text-[#6B635B]">Loading custom commissions...</div>
+                    <div className="p-16 text-center text-xs text-stone-500 font-mono">Loading custom commissions...</div>
                 ) : filteredProjects.length === 0 ? (
-                    <div className="card p-12 bg-white text-center border border-[#E8E2D9] max-w-md mx-auto my-6 shadow-card">
-                        <FolderOpen className="w-10 h-10 text-[#6B635B] mx-auto mb-2 opacity-50" />
-                        <h3 className="font-display font-bold text-sm text-[#1E1B18] mb-1">No Commissions Found</h3>
-                        <p className="text-xs text-[#6B635B] mb-4">Post a custom project requirement to start receiving bids from verified artisans.</p>
-                        <Link href="/projects/new" className="btn-primary text-xs py-2 px-4 inline-flex items-center gap-1.5 font-semibold">
+                    <KintoCard glow className="p-12 text-center max-w-md mx-auto my-6">
+                        <FolderOpen className="w-10 h-10 text-stone-400 mx-auto mb-3 opacity-60" />
+                        <h3 className="font-display font-bold text-base text-stone-950 mb-1">No Commissions Found</h3>
+                        <p className="text-xs text-stone-500 mb-5">Post a custom project requirement to start receiving bids from verified artisans.</p>
+                        <Link href="/projects/new" className="btn-primary text-xs py-2.5 px-5 rounded-full inline-flex items-center gap-1.5 font-semibold font-mono">
                             <Plus className="w-3.5 h-3.5" />
                             <span>Create Commission</span>
                         </Link>
-                    </div>
+                    </KintoCard>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         {filteredProjects.map((proj) => {
                             const isOwner = user && (user.id === proj.buyer_id || proj.buyer_id === 'sample-buyer');
                             const refImgMatch = proj.description?.match(/\[REFERENCE_IMAGE:\s*(.*?)\]/);
@@ -269,53 +277,53 @@ export default function ProjectsDirectoryPage() {
                             const cleanDescription = proj.description?.replace(/\[REFERENCE_IMAGE:\s*(.*?)\]/, '').trim();
 
                             return (
-                                <div
+                                <KintoCard
                                     key={proj.id}
-                                    className="bg-white border border-[#E8E2D9] rounded-xl p-5 shadow-card hover:shadow-elevated transition-all flex flex-col justify-between"
+                                    glow={true}
+                                    className="p-6 flex flex-col justify-between transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-stone-900/5"
                                 >
                                     <div>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider ${
-                                                proj.status === 'COMPLETED'
-                                                    ? 'bg-[#EDF7ED] text-[#2E7D32]'
-                                                    : 'bg-[#FFF4E5] text-[#ED6C02]'
-                                            }`}>
+                                        <div className="flex items-center justify-between mb-3">
+                                            <KintoBadge
+                                                variant={proj.status === 'COMPLETED' ? 'success' : 'warning'}
+                                                dot={true}
+                                            >
                                                 {proj.status}
-                                            </span>
-                                            <span className="text-[10px] text-[#6B635B] font-mono">
+                                            </KintoBadge>
+                                            <span className="text-[10px] text-stone-400 font-mono">
                                                 {new Date(proj.created_at).toLocaleDateString()}
                                             </span>
                                         </div>
 
                                         {/* Reference Sketch / Photo */}
                                         {projImageUrl && (
-                                            <div className="mb-3 rounded-xl overflow-hidden border border-[#E8E2D9] bg-[#FAF8F5] relative group">
+                                            <div className="mb-3.5 rounded-2xl overflow-hidden border border-stone-200/80 bg-stone-50 relative group">
                                                 <img
                                                     src={projImageUrl}
                                                     alt={`Reference sketch for ${proj.title}`}
-                                                    className="w-full h-36 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                                                    className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-500 cursor-pointer"
                                                     onClick={() => window.open(projImageUrl, '_blank')}
                                                 />
-                                                <div className="bg-[#1E1B18]/80 backdrop-blur-xs text-white px-2.5 py-1 text-[10px] flex items-center justify-between absolute bottom-0 left-0 right-0">
+                                                <div className="bg-stone-900/80 backdrop-blur-xs text-white px-3 py-1.5 text-[10px] flex items-center justify-between absolute bottom-0 left-0 right-0 font-mono">
                                                     <span className="font-medium">📷 Reference Sketch</span>
                                                     <span className="text-[#F7EAD9] underline cursor-pointer">Click to enlarge</span>
                                                 </div>
                                             </div>
                                         )}
 
-                                        <h3 className="font-display font-bold text-base text-[#1E1B18] mb-1.5 line-clamp-1">
+                                        <h3 className="font-display font-bold text-base text-stone-950 mb-1.5 line-clamp-1">
                                             {proj.title}
                                         </h3>
-                                        <p className="text-xs text-[#6B635B] line-clamp-3 leading-relaxed mb-4">
+                                        <p className="text-xs text-stone-600 line-clamp-3 leading-relaxed mb-4">
                                             {cleanDescription}
                                         </p>
 
-                                        <div className="flex items-center justify-between pt-3 border-t border-[#F3EFEA] text-xs">
+                                        <div className="flex items-center justify-between pt-3.5 border-t border-stone-100 text-xs">
                                             <div className="flex items-center gap-1 text-[#C85A32] font-mono font-bold">
                                                 <DollarSign className="w-3.5 h-3.5" />
                                                 <span>₹{proj.budget_min?.toLocaleString('en-IN')} – ₹{proj.budget_max?.toLocaleString('en-IN')}</span>
                                             </div>
-                                            <div className="flex items-center gap-1 text-[#6B635B]">
+                                            <div className="flex items-center gap-1 text-stone-500 font-mono text-[11px]">
                                                 <Calendar className="w-3.5 h-3.5" />
                                                 <span>{proj.deadline ? new Date(proj.deadline).toLocaleDateString() : 'Flexible'}</span>
                                             </div>
@@ -323,13 +331,13 @@ export default function ProjectsDirectoryPage() {
                                     </div>
 
                                     {/* Action Buttons */}
-                                    <div className="mt-4 pt-3 border-t border-[#F3EFEA] flex items-center justify-between gap-2">
+                                    <div className="mt-4 pt-3.5 border-t border-stone-100 flex items-center justify-between gap-2">
                                         <Link
                                             href={`/projects/${proj.id}`}
-                                            className="text-xs text-[#C85A32] font-semibold hover:underline flex items-center gap-1"
+                                            className="text-xs text-[#C85A32] font-semibold hover:text-[#B04B26] flex items-center gap-1 font-mono group"
                                         >
                                             <span>View Details & Bids</span>
-                                            <ArrowRight className="w-3.5 h-3.5" />
+                                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                                         </Link>
 
                                         {isOwner && (
@@ -337,7 +345,7 @@ export default function ProjectsDirectoryPage() {
                                                 <button
                                                     onClick={() => handleToggleComplete(proj.id, proj.status)}
                                                     title={proj.status === 'COMPLETED' ? 'Reopen Commission' : 'Mark as Completed'}
-                                                    className="py-1 px-2.5 bg-[#FDFBF7] hover:bg-[#EDF7ED] text-[#2E7D32] border border-[#E8E2D9] rounded-lg transition-all text-[11px] font-semibold flex items-center gap-1 cursor-pointer"
+                                                    className="py-1 px-3 bg-white hover:bg-emerald-50 text-emerald-700 border border-stone-200 rounded-full transition-all text-[11px] font-semibold flex items-center gap-1 cursor-pointer font-mono"
                                                 >
                                                     <CheckCircle2 className="w-3 h-3" />
                                                     <span>{proj.status === 'COMPLETED' ? 'Reopen' : 'Complete'}</span>
@@ -346,15 +354,15 @@ export default function ProjectsDirectoryPage() {
                                                     onClick={() => handleDeleteProject(proj.id)}
                                                     disabled={deletingId === proj.id}
                                                     title="Delete this commission"
-                                                    className="py-1 px-2 text-[#6B635B] hover:text-[#D32F2F] hover:bg-[#FDEDED] border border-[#E8E2D9] hover:border-[#F5C2C7] rounded-lg transition-all text-[11px] font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                                                    className="py-1 px-2.5 text-stone-400 hover:text-rose-600 hover:bg-rose-50 border border-stone-200 rounded-full transition-all text-[11px] font-semibold flex items-center gap-1 cursor-pointer disabled:opacity-50 font-mono"
                                                 >
-                                                    <Trash2 className="w-3 h-3 text-[#D32F2F]" />
+                                                    <Trash2 className="w-3 h-3 text-rose-500" />
                                                     <span>{deletingId === proj.id ? '...' : 'Delete'}</span>
                                                 </button>
                                             </div>
                                         )}
                                     </div>
-                                </div>
+                                </KintoCard>
                             );
                         })}
                     </div>

@@ -59,33 +59,34 @@ export function EscrowStatusBadge({
     size = 'md',
     className = '',
 }: EscrowStatusBadgeProps): React.ReactNode {
-    const config: Record<string, { label: string; bg: string; text: string; icon: React.ComponentType<{ className?: string }>; pulse?: boolean }> = {
-        AWAITING_PAYMENT: { label: 'Awaiting Escrow Funding', bg: 'bg-[#FAF8F5]', text: 'text-[#6B635B]', icon: Clock },
-        INITIATED: { label: 'Payment Initiated', bg: 'bg-[#FAF8F5]', text: 'text-[#6B635B]', icon: Clock },
-        HELD_IN_ESCROW: { label: 'Locked in Escrow', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: Lock, pulse: true },
-        FUNDED: { label: 'Escrow Locked', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: Lock },
-        DISPATCHED: { label: 'In Transit with Courier', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: ShieldCheck },
-        IN_TRANSIT: { label: 'In Transit', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: ShieldCheck },
-        DELIVERED_PENDING_BUFFER: { label: '48h Inspection Buffer', bg: 'bg-[#FFF4E5]', text: 'text-[#ED6C02]', icon: Clock, pulse: true },
-        IN_INSPECTION: { label: '48h Inspection Window', bg: 'bg-[#FFF4E5]', text: 'text-[#ED6C02]', icon: Clock, pulse: true },
-        RELEASED: { label: 'Milestone Released to Maker', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: CheckCircle2 },
-        COMPLETED: { label: 'Order Complete', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: CheckCircle2 },
-        REFUNDED: { label: 'Refunded to Buyer', bg: 'bg-[#F3EFEA]', text: 'text-[#6B635B]', icon: RefreshCw },
-        DISPUTED: { label: 'Disputed - In Triage', bg: 'bg-[#FDEDED]', text: 'text-[#D32F2F]', icon: AlertTriangle, pulse: true },
-        IN_TRIAGE: { label: 'Under Platform Review', bg: 'bg-[#FDEDED]', text: 'text-[#D32F2F]', icon: AlertTriangle, pulse: true },
+    const config: Record<string, { label: string; bg: string; text: string; ring: string; icon: React.ComponentType<{ className?: string }>; pulse?: boolean }> = {
+        AWAITING_PAYMENT: { label: 'Awaiting Funding', bg: 'bg-stone-100/90', text: 'text-stone-700', ring: 'border-stone-300', icon: Clock },
+        INITIATED: { label: 'Payment Initiated', bg: 'bg-stone-100/90', text: 'text-stone-700', ring: 'border-stone-300', icon: Clock },
+        HELD_IN_ESCROW: { label: 'Locked in Escrow', bg: 'bg-emerald-500/10', text: 'text-emerald-700', ring: 'border-emerald-600/30', icon: Lock, pulse: true },
+        FUNDED: { label: 'Escrow Locked', bg: 'bg-emerald-500/10', text: 'text-emerald-700', ring: 'border-emerald-600/30', icon: Lock },
+        DISPATCHED: { label: 'In Transit with Courier', bg: 'bg-emerald-500/10', text: 'text-emerald-700', ring: 'border-emerald-600/30', icon: ShieldCheck },
+        IN_TRANSIT: { label: 'In Transit', bg: 'bg-emerald-500/10', text: 'text-emerald-700', ring: 'border-emerald-600/30', icon: ShieldCheck },
+        DELIVERED_PENDING_BUFFER: { label: '48h Inspection Buffer', bg: 'bg-amber-500/10', text: 'text-amber-700', ring: 'border-amber-600/30', icon: Clock, pulse: true },
+        IN_INSPECTION: { label: '48h Inspection Window', bg: 'bg-amber-500/10', text: 'text-amber-700', ring: 'border-amber-600/30', icon: Clock, pulse: true },
+        RELEASED: { label: 'Milestone Released', bg: 'bg-emerald-500/10', text: 'text-emerald-700', ring: 'border-emerald-600/30', icon: CheckCircle2 },
+        COMPLETED: { label: 'Order Completed', bg: 'bg-emerald-500/10', text: 'text-emerald-700', ring: 'border-emerald-600/30', icon: CheckCircle2 },
+        REFUNDED: { label: 'Refunded to Buyer', bg: 'bg-stone-100/90', text: 'text-stone-600', ring: 'border-stone-300', icon: RefreshCw },
+        DISPUTED: { label: 'Disputed - In Triage', bg: 'bg-rose-500/10', text: 'text-rose-700', ring: 'border-rose-600/30', icon: AlertTriangle, pulse: true },
+        IN_TRIAGE: { label: 'Platform Triage', bg: 'bg-rose-500/10', text: 'text-rose-700', ring: 'border-rose-600/30', icon: AlertTriangle, pulse: true },
     };
 
     const sanitizedKey = typeof status === 'string' && status ? status.trim().toUpperCase() : 'INITIATED';
     const current = config[sanitizedKey] || {
         label: typeof status === 'string' && status ? status.replace(/_/g, ' ') : 'Processing Escrow',
-        bg: 'bg-[#FAF8F5]',
-        text: 'text-[#6B635B]',
+        bg: 'bg-stone-100/90',
+        text: 'text-stone-700',
+        ring: 'border-stone-300',
         icon: ShieldCheck,
         pulse: false,
     };
 
     const sizeClasses = {
-        sm: 'px-2 py-0.5 text-[10px]',
+        sm: 'px-2.5 py-0.5 text-[10px]',
         md: 'px-3 py-1 text-xs',
         lg: 'px-3.5 py-1.5 text-sm',
     }[size];
@@ -93,12 +94,12 @@ export function EscrowStatusBadge({
     const Icon = current.icon;
 
     return (
-        <div className="inline-flex items-center gap-1.5 flex-wrap">
+        <div className="inline-flex items-center gap-2 flex-wrap">
             <span
                 role="status"
                 aria-live="polite"
                 aria-label={`Escrow Status: ${current.label}`}
-                className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${sizeClasses} ${current.bg} ${current.text} border border-current/15 ${className}`}
+                className={`inline-flex items-center gap-1.5 rounded-full font-mono font-semibold tracking-tight border ${sizeClasses} ${current.bg} ${current.text} ${current.ring} ${className}`}
             >
                 {current.pulse && (
                     <span className="relative flex h-2 w-2">
@@ -111,7 +112,7 @@ export function EscrowStatusBadge({
             </span>
 
             {showRailBadge && rail && (
-                <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#FAF8F5] border border-[#E8E2D9] text-[#6B635B]">
+                <span className="text-[10px] font-mono font-medium px-2.5 py-0.5 rounded-full bg-white/90 border border-stone-200 text-stone-600 shadow-2xs">
                     {rail === 'WEB3_ONCHAIN_USDC' ? '⚡ USDC Smart Escrow' : '🏛️ RBI Nodal Rail'}
                 </span>
             )}
