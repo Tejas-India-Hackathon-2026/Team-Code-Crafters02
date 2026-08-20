@@ -110,6 +110,7 @@ export default function VendorDashboardPage() {
     const [myProducts, setMyProducts] = useState<UploadedProduct[]>([]);
     const [buyerInquiries, setBuyerInquiries] = useState<BuyerInquiry[]>([]);
     const [openProjects, setOpenProjects] = useState<Project[]>([]);
+    const [myBids, setMyBids] = useState<Record<string, { id?: string; bid_amount: number; proposal_text: string; status?: string }>>({});
 
     // Bid modal state
     const [bidProjectId, setBidProjectId] = useState<string | null>(null);
@@ -276,6 +277,48 @@ export default function VendorDashboardPage() {
         }
 
         setOpenProjects(allProjects);
+
+        // 5. Fetch bids submitted by this artisan across custom projects
+        const bidsMap: Record<string, { id?: string; bid_amount: number; proposal_text: string; status?: string }> = {};
+        try {
+            const { data: bidsData } = await supabase
+                .from('project_bids')
+                .select('*')
+                .eq('vendor_id', user.id);
+
+            if (bidsData) {
+                bidsData.forEach((b: any) => {
+                    bidsMap[b.project_id] = {
+                        id: b.id,
+                        bid_amount: Number(b.bid_amount || b.amount || 0),
+                        proposal_text: b.proposal_text || '',
+                        status: b.status || 'PENDING',
+                    };
+                });
+            }
+        } catch (e) {}
+
+        if (typeof window !== 'undefined') {
+            try {
+                const cachedBids = JSON.parse(localStorage.getItem('karigar_project_bids_cache') || '[]');
+                if (Array.isArray(cachedBids)) {
+                    cachedBids.forEach((cb: any) => {
+                        const vId = cb.vendor_id || cb.vendorId;
+                        const pId = cb.project_id || cb.projectId;
+                        if ((vId === user.id || !vId) && pId) {
+                            bidsMap[pId] = {
+                                id: cb.id,
+                                bid_amount: Number(cb.bid_amount || cb.amount || 0),
+                                proposal_text: cb.proposal_text || cb.proposalText || '',
+                                status: cb.status || 'PENDING',
+                            };
+                        }
+                    });
+                }
+            } catch (e) {}
+        }
+
+        setMyBids(bidsMap);
         setLoading(false);
     };
 
@@ -365,6 +408,19 @@ export default function VendorDashboardPage() {
         }
     };
 
+    const handleOpenBidModal = (projectId: string) => {
+        const existing = myBids[projectId];
+        if (existing) {
+            setBidAmount(existing.bid_amount ? existing.bid_amount.toString() : '');
+            setProposalText(existing.proposal_text || '');
+        } else {
+            setBidAmount('');
+            setProposalText('');
+        }
+        setBidStatus('');
+        setBidProjectId(projectId);
+    };
+
     const handleBidSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!bidProjectId || !profile) return;
@@ -376,22 +432,120 @@ export default function VendorDashboardPage() {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            const { error } = await supabase.from('project_bids').insert({
-                project_id: bidProjectId,
-                vendor_id: user.id,
-                bid_amount: parseFloat(bidAmount),
-                proposal_text: proposalText,
-                status: 'PENDING',
+            const existing = myBids[bidProjectId];
+            const isUpdate = !!existing;
+            const amountNum = parseFloat(bidAmount);
+
+            const res = await fetch('/api/vendor/bids/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: isUpdate ? 'UPDATE' : 'SUBMIT',
+                    projectId: bidProjectId,
+                    vendorId: user.id,
+                    bidId: existing?.id,
+                    bidAmount: amountNum,
+                    proposalText: proposalText,
+                    vendorName: profile.full_name || 'Verified Artisan',
+                }),
             });
 
-            if (error) throw error;
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Failed to process proposal');
+            }
 
-            setBidStatus('Bid submitted successfully!');
-            setBidAmount('');
-            setProposalText('');
-            setBidProjectId(null);
+            const newBidRecord = {
+                id: data.bid?.id || existing?.id || `bid-${Date.now()}`,
+                project_id: bidProjectId,
+                projectId: bidProjectId,
+                vendor_id: user.id,
+                vendorId: user.id,
+                bid_amount: amountNum,
+                amount: amountNum,
+                proposal_text: proposalText,
+                proposalText: proposalText,
+                status: 'PENDING',
+                vendor: {
+                    full_name: profile.full_name || 'Verified Artisan',
+                    vendor_verified: true,
+                },
+            };
+
+            setMyBids((prev) => ({
+                ...prev,
+                [bidProjectId]: newBidRecord,
+            }));
+
+            if (typeof window !== 'undefined') {
+                try {
+                    const currentCache = JSON.parse(localStorage.getItem('karigar_project_bids_cache') || '[]');
+                    const filtered = currentCache.filter(
+                        (b: any) => !((b.projectId === bidProjectId || b.project_id === bidProjectId) && (b.vendorId === user.id || b.vendor_id === user.id))
+                    );
+                    localStorage.setItem('karigar_project_bids_cache', JSON.stringify([...filtered, newBidRecord]));
+                } catch (e) {}
+            }
+
+            setBidStatus(isUpdate ? '✓ Bid updated successfully!' : '✓ Bid submitted successfully!');
+            setTimeout(() => {
+                setBidProjectId(null);
+                setBidStatus('');
+            }, 1000);
         } catch (err: any) {
             setBidStatus(`Error: ${err.message}`);
+        } finally {
+            setBidLoading(false);
+        }
+    };
+
+    const handleDeleteBid = async (projectId: string) => {
+        if (!window.confirm('Are you sure you want to withdraw and delete your bid from this commission?')) {
+            return;
+        }
+
+        setBidLoading(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const existing = myBids[projectId];
+
+            const res = await fetch('/api/vendor/bids/manage', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    action: 'DELETE',
+                    projectId: projectId,
+                    vendorId: user?.id,
+                    bidId: existing?.id,
+                }),
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                throw new Error(data.message || 'Failed to withdraw bid');
+            }
+
+            setMyBids((prev) => {
+                const next = { ...prev };
+                delete next[projectId];
+                return next;
+            });
+
+            if (typeof window !== 'undefined') {
+                try {
+                    const currentCache = JSON.parse(localStorage.getItem('karigar_project_bids_cache') || '[]');
+                    const filtered = currentCache.filter(
+                        (b: any) => !((b.projectId === projectId || b.project_id === projectId) && (b.vendorId === user?.id || b.vendor_id === user?.id))
+                    );
+                    localStorage.setItem('karigar_project_bids_cache', JSON.stringify(filtered));
+                } catch (e) {}
+            }
+
+            if (bidProjectId === projectId) {
+                setBidProjectId(null);
+            }
+        } catch (err: any) {
+            alert('Error withdrawing bid: ' + err.message);
         } finally {
             setBidLoading(false);
         }
@@ -783,14 +937,52 @@ export default function VendorDashboardPage() {
                                             </div>
                                         </div>
 
-                                        <div className="mt-3 pt-3 border-t border-[#F3EFEA] flex justify-end">
-                                            <button
-                                                onClick={() => setBidProjectId(proj.id)}
-                                                className="btn-primary text-xs py-1.5 px-3.5 font-semibold flex items-center gap-1"
-                                            >
-                                                <Plus className="w-3.5 h-3.5" />
-                                                <span>Submit Custom Proposal</span>
-                                            </button>
+                                        <div className="mt-3 pt-3 border-t border-[#F3EFEA]">
+                                            {(() => {
+                                                const placedBid = myBids[proj.id];
+                                                if (placedBid) {
+                                                    return (
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                                                            <div className="flex items-center gap-1.5 bg-[#EDF7ED] border border-[#2E7D32]/20 px-2.5 py-1 rounded-lg">
+                                                                <span className="w-2 h-2 rounded-full bg-[#2E7D32] animate-pulse"></span>
+                                                                <span className="text-[11px] font-bold text-[#2E7D32] font-mono">
+                                                                    Your Bid: ₹{placedBid.bid_amount?.toLocaleString('en-IN')}
+                                                                </span>
+                                                            </div>
+                                                            <div className="flex items-center gap-2">
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleDeleteBid(proj.id)}
+                                                                    className="text-xs text-[#D32F2F] hover:text-[#B71C1C] font-semibold px-2.5 py-1.5 rounded-lg border border-[#D32F2F]/20 hover:bg-[#FDEDED] transition-all cursor-pointer flex items-center gap-1"
+                                                                >
+                                                                    <Trash2 className="w-3 h-3" />
+                                                                    <span>Withdraw</span>
+                                                                </button>
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => handleOpenBidModal(proj.id)}
+                                                                    className="btn-secondary text-xs py-1.5 px-3 font-semibold flex items-center gap-1 cursor-pointer"
+                                                                >
+                                                                    <Edit3 className="w-3 h-3" />
+                                                                    <span>Update Bid</span>
+                                                                </button>
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                }
+                                                return (
+                                                    <div className="flex justify-end">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => handleOpenBidModal(proj.id)}
+                                                            className="btn-primary text-xs py-1.5 px-3.5 font-semibold flex items-center gap-1 cursor-pointer"
+                                                        >
+                                                            <Plus className="w-3.5 h-3.5" />
+                                                            <span>Submit Custom Proposal</span>
+                                                        </button>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                 );
@@ -955,15 +1147,24 @@ export default function VendorDashboardPage() {
                     </div>
                 )}
 
-                {/* Bid Submission Modal */}
+                {/* Bid Submission & Update Modal */}
                 {bidProjectId && (
                     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
                         <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl border border-[#E8E2D9]">
-                            <h3 className="font-display font-bold text-lg text-[#1E1B18] mb-1">
-                                Submit Custom Project Bid
-                            </h3>
+                            <div className="flex items-center justify-between mb-1">
+                                <h3 className="font-display font-bold text-lg text-[#1E1B18]">
+                                    {myBids[bidProjectId] ? 'Update Custom Project Bid' : 'Submit Custom Project Bid'}
+                                </h3>
+                                {myBids[bidProjectId] && (
+                                    <span className="text-[10px] font-bold bg-[#EDF7ED] text-[#2E7D32] px-2 py-0.5 rounded-full uppercase">
+                                        Existing Bid Active
+                                    </span>
+                                )}
+                            </div>
                             <p className="text-xs text-[#6B635B] mb-4">
-                                Provide your estimated cost and proposal notes for this client.
+                                {myBids[bidProjectId]
+                                    ? 'Revise your proposed pricing and craft timeline for this client.'
+                                    : 'Provide your estimated cost and proposal notes for this client.'}
                             </p>
 
                             <form onSubmit={handleBidSubmit} className="flex flex-col gap-3">
@@ -974,6 +1175,7 @@ export default function VendorDashboardPage() {
                                     <input
                                         type="number"
                                         required
+                                        min="100"
                                         placeholder="e.g. 35000"
                                         value={bidAmount}
                                         onChange={(e) => setBidAmount(e.target.value)}
@@ -996,24 +1198,44 @@ export default function VendorDashboardPage() {
                                 </div>
 
                                 {bidStatus && (
-                                    <p className="text-xs text-[#2E7D32] font-semibold">{bidStatus}</p>
+                                    <p className={`text-xs font-semibold ${bidStatus.startsWith('Error') ? 'text-[#D32F2F]' : 'text-[#2E7D32]'}`}>
+                                        {bidStatus}
+                                    </p>
                                 )}
 
-                                <div className="flex gap-2 justify-end mt-2">
-                                    <button
-                                        type="button"
-                                        onClick={() => setBidProjectId(null)}
-                                        className="btn-ghost text-xs py-2 px-4"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button
-                                        type="submit"
-                                        disabled={bidLoading}
-                                        className="btn-primary text-xs py-2 px-4 font-semibold"
-                                    >
-                                        {bidLoading ? 'Submitting...' : 'Submit Bid'}
-                                    </button>
+                                <div className="flex items-center justify-between mt-2 pt-2 border-t border-[#F3EFEA]">
+                                    {myBids[bidProjectId] ? (
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDeleteBid(bidProjectId)}
+                                            disabled={bidLoading}
+                                            className="text-xs text-[#D32F2F] hover:text-[#B71C1C] font-semibold py-2 px-3 rounded-lg border border-[#D32F2F]/20 hover:bg-[#FDEDED] transition-all cursor-pointer flex items-center gap-1"
+                                        >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                            <span>Withdraw Bid</span>
+                                        </button>
+                                    ) : (
+                                        <div></div>
+                                    )}
+
+                                    <div className="flex gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => setBidProjectId(null)}
+                                            className="btn-ghost text-xs py-2 px-4 cursor-pointer"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button
+                                            type="submit"
+                                            disabled={bidLoading}
+                                            className="btn-primary text-xs py-2 px-4 font-semibold cursor-pointer"
+                                        >
+                                            {bidLoading
+                                                ? (myBids[bidProjectId] ? 'Updating...' : 'Submitting...')
+                                                : (myBids[bidProjectId] ? 'Update Bid' : 'Submit Bid')}
+                                        </button>
+                                    </div>
                                 </div>
                             </form>
                         </div>
