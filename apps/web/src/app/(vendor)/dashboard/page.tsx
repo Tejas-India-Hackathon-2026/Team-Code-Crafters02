@@ -513,9 +513,13 @@ export default function VendorDashboardPage() {
                                                     className="w-full h-full object-cover"
                                                 />
                                                 <div className="absolute top-3 left-3">
-                                                    {prod.status === 'AUTO_APPROVED' && scorePct >= 85 ? (
+                                                    {(prod.status === 'VERIFIED' || prod.status === 'AUTO_APPROVED' || scorePct >= 85) ? (
                                                         <span className="text-[10px] font-bold bg-[#EDF7ED] text-[#2E7D32] px-2 py-0.5 rounded-full shadow-sm">
                                                             ✓ {scorePct}% AI Verified
+                                                        </span>
+                                                    ) : (prod.status === 'PENDING_ADMIN_REVIEW' || prod.status === 'NEEDS_REVIEW') ? (
+                                                        <span className="text-[10px] font-bold bg-[#FFF4E5] text-[#ED6C02] px-2 py-0.5 rounded-full shadow-sm">
+                                                            ⏳ {scorePct}% In Review
                                                         </span>
                                                     ) : (
                                                         <span className="text-[10px] font-bold bg-[#FDEDED] text-[#D32F2F] px-2 py-0.5 rounded-full shadow-sm">
