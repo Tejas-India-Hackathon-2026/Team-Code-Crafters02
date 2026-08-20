@@ -101,6 +101,10 @@ function MessagesContent() {
     const paramVendorName = searchParams.get('vendorName');
     const paramProjectId = searchParams.get('projectId');
     const paramProposalText = searchParams.get('proposalText');
+    const paramOrderId = searchParams.get('orderId');
+    const paramEscrowStatus = searchParams.get('escrowStatus');
+
+    const [currentEscrowOrder, setCurrentEscrowOrder] = useState<any>(null);
 
     useEffect(() => {
         const initChat = async () => {
@@ -330,6 +334,42 @@ function MessagesContent() {
         setInputText('');
     };
 
+    // 3. Resolve Active Escrow Order State
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const orderId = paramOrderId || activeDiscussion?.orderId;
+            if (orderId) {
+                const cached = localStorage.getItem(`escrow_order_${orderId}`);
+                if (cached) {
+                    try {
+                        setCurrentEscrowOrder(JSON.parse(cached));
+                    } catch (e) {}
+                }
+            } else if (activeDiscussion?.artisanId) {
+                try {
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && key.startsWith('escrow_order_')) {
+                            const raw = localStorage.getItem(key);
+                            if (raw) {
+                                const ord = JSON.parse(raw);
+                                if (
+                                    ord.artisanId === activeDiscussion.artisanId ||
+                                    ord.vendor_id === activeDiscussion.artisanId ||
+                                    ord.vendorId === activeDiscussion.artisanId ||
+                                    (ord.project && ord.project.title === activeDiscussion.productTitle)
+                                ) {
+                                    setCurrentEscrowOrder(ord);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+        }
+    }, [paramOrderId, activeDiscussion, activeConversationId]);
+
     // Command: Finalize & Place Order
     const handleFinalizeOrder = () => {
         if (!activeDiscussion) return;
@@ -346,6 +386,45 @@ function MessagesContent() {
         const projectRef = updated.projectId ? ` [PROJECT_ID: ${updated.projectId}]` : '';
         sendMessage(
             `[COMMAND: ORDER_FINALIZED] ✓ I would like to finalize and confirm my order for "${updated.productTitle}" at ₹${updated.price.toLocaleString('en-IN')}.${projectRef} Please generate the TDS-compliant milestone invoice.`
+        );
+    };
+
+    // Command: Finalize & Close Order after Payout Release
+    const handleFinalizeAndCloseOrder = () => {
+        if (!activeDiscussion) return;
+
+        const updated: ProductDiscussion = {
+            ...activeDiscussion,
+            status: 'ORDER_FINALIZED',
+        };
+        setActiveDiscussion(updated);
+
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(`active_discussion_${updated.artisanId}`, JSON.stringify(updated));
+
+            try {
+                const rawReg = localStorage.getItem('karigar_conversations_registry');
+                if (rawReg) {
+                    const list = JSON.parse(rawReg);
+                    const updatedList = list.map((c: any) =>
+                        c.id === activeConversationId || c.artisanId === updated.artisanId
+                            ? {
+                                  ...c,
+                                  isFinalized: true,
+                                  status: 'ORDER_FINALIZED',
+                                  lastMessage: `✓ Order Finalized & Escrow Released (₹${(updated.price || 0).toLocaleString('en-IN')})`,
+                                  lastTimestamp: 'Finalized',
+                              }
+                            : c
+                    );
+                    localStorage.setItem('karigar_conversations_registry', JSON.stringify(updatedList));
+                    setConversationsList(updatedList);
+                }
+            } catch (e) {}
+        }
+
+        sendMessage(
+            `[ORDER_FINALIZED] ✓ Order for "${updated.productTitle}" (₹${updated.price.toLocaleString('en-IN')}) has been successfully completed and finalized! The escrow payout is released and the discussion is now officially closed.`
         );
     };
 
@@ -751,9 +830,12 @@ function MessagesContent() {
                                     grossPrice={activeDiscussion?.price || 24500}
                                     isVendor={userProfile?.is_vendor || false}
                                     isVerified={userProfile?.vendor_verified || false}
-                                    isFinalized={false}
+                                    isFinalized={activeDiscussion?.status === 'ORDER_FINALIZED'}
+                                    escrowStatus={currentEscrowOrder?.status || paramEscrowStatus || null}
+                                    orderId={currentEscrowOrder?.id || paramOrderId || null}
                                     onSendQuoteMessage={(quoteStr) => sendMessage(quoteStr)}
                                     onAcceptAndFund={(gross, tds, net) => handleAcceptAndFundEscrow(gross, tds, net)}
+                                    onFinalizeOrder={handleFinalizeAndCloseOrder}
                                 />
                             </div>
                         )}
