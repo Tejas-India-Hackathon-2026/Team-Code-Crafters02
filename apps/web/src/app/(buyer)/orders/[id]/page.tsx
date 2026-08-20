@@ -114,7 +114,60 @@ export default function OrderTrackingPage() {
                 .update({ status: newStatus })
                 .eq('id', orderId);
 
-            setOrder((prev: any) => prev ? { ...prev, status: newStatus } : prev);
+            const updatedOrder = order ? { ...order, status: newStatus } : { id: orderId, status: newStatus };
+            setOrder(updatedOrder);
+
+            if (typeof window !== 'undefined') {
+                try {
+                    localStorage.setItem(`escrow_order_${orderId}`, JSON.stringify(updatedOrder));
+
+                    // If released/payout complete -> Auto Finalize the Order & Close active discussion
+                    if (newStatus === 'RELEASED') {
+                        const targetArtisanId = order?.artisanId || order?.vendor_id || order?.vendorId;
+                        const targetProjectId = order?.projectId || order?.project_id;
+
+                        // Mark active discussion as finalized
+                        if (targetArtisanId) {
+                            const rawDisc = localStorage.getItem(`active_discussion_${targetArtisanId}`);
+                            if (rawDisc) {
+                                const discObj = JSON.parse(rawDisc);
+                                discObj.status = 'ORDER_FINALIZED';
+                                discObj.orderId = orderId;
+                                localStorage.setItem(`active_discussion_${targetArtisanId}`, JSON.stringify(discObj));
+                            }
+                        }
+
+                        // Mark conversation in registry as completed/finalized
+                        const rawReg = localStorage.getItem('karigar_conversations_registry');
+                        if (rawReg) {
+                            const regList = JSON.parse(rawReg);
+                            if (Array.isArray(regList)) {
+                                const updatedReg = regList.map((c: any) => {
+                                    if (
+                                        c.id === `conv-${targetArtisanId}-${targetProjectId}` ||
+                                        c.id === `conv-${targetArtisanId}` ||
+                                        (targetArtisanId && c.artisanId === targetArtisanId)
+                                    ) {
+                                        return {
+                                            ...c,
+                                            isFinalized: true,
+                                            status: 'ORDER_FINALIZED',
+                                            lastMessage: `✓ Order Finalized & Escrow Payout Released (₹${(order.gross_amount || 0).toLocaleString('en-IN')})`,
+                                            lastTimestamp: 'Finalized',
+                                        };
+                                    }
+                                    return c;
+                                });
+                                localStorage.setItem('karigar_conversations_registry', JSON.stringify(updatedReg));
+                            }
+                        }
+
+                        // Broadcast storage & custom synchronization events
+                        window.dispatchEvent(new Event('storage'));
+                        window.dispatchEvent(new CustomEvent('karigar_order_finalized', { detail: { orderId, artisanId: targetArtisanId } }));
+                    }
+                } catch (e) {}
+            }
             setTimeout(() => setActionMsg(null), 4000);
         } catch (err: any) {
             console.error('Update status error:', err);
@@ -429,32 +482,76 @@ export default function OrderTrackingPage() {
                     )}
 
                     {/* Escrow Testing & Simulation Toolbar */}
-                    <div className="mt-6 pt-5 border-t border-[#E8E2D9]">
-                        <p className="text-[10px] uppercase font-bold tracking-wider text-[#6B635B] mb-2 flex items-center gap-1">
-                            <Sparkles className="w-3 h-3 text-[#C85A32]" />
-                            <span>Dual-Rail Logistics Simulator (Test Controls)</span>
-                        </p>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <button
-                                onClick={() => handleUpdateStatus('HELD_IN_ESCROW')}
-                                className="text-[11px] py-2 px-2.5 bg-[#F3EFEA] hover:bg-[#E8E2D9] rounded-lg font-medium text-[#1E1B18] transition-colors"
-                            >
-                                1. Lock in Escrow
-                            </button>
-                            <button
-                                onClick={() => handleUpdateStatus('DELIVERED_PENDING_BUFFER')}
-                                className="text-[11px] py-2 px-2.5 bg-[#FFF4E5] hover:bg-[#FFE8CC] rounded-lg font-medium text-[#ED6C02] transition-colors"
-                            >
-                                2. Courier Delivered (48h)
-                            </button>
-                            <button
-                                onClick={() => handleUpdateStatus('RELEASED')}
-                                className="text-[11px] py-2 px-2.5 bg-[#EDF7ED] hover:bg-[#D4EDDA] rounded-lg font-medium text-[#2E7D32] transition-colors"
-                            >
-                                3. Release Payout
-                            </button>
-                        </div>
-                    </div>
+                    {(() => {
+                        const isAwaiting = !order || order.status === 'AWAITING_PAYMENT';
+                        const isHeld = order?.status === 'HELD_IN_ESCROW';
+                        const isBuffer = order?.status === 'DELIVERED_PENDING_BUFFER';
+                        const isReleased = order?.status === 'RELEASED';
+                        const isDisputed = order?.status === 'DISPUTED';
+
+                        return (
+                            <div className="mt-6 pt-5 border-t border-[#E8E2D9]">
+                                <div className="flex items-center justify-between mb-2">
+                                    <p className="text-[10px] uppercase font-bold tracking-wider text-[#6B635B] flex items-center gap-1">
+                                        <Sparkles className="w-3 h-3 text-[#C85A32]" />
+                                        <span>Dual-Rail Logistics Simulator (Sequential Steps)</span>
+                                    </p>
+                                    <span className="text-[10px] font-mono text-[#6B635B]">
+                                        Step {isReleased ? '4/4 (Completed)' : isBuffer ? '3/4 (Delivery Buffer)' : isHeld ? '2/4 (Funds Locked)' : '1/4 (Awaiting Payment)'}
+                                    </span>
+                                </div>
+                                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                                    {/* Step 1: Hold in Escrow */}
+                                    <button
+                                        onClick={() => handleUpdateStatus('HELD_IN_ESCROW')}
+                                        disabled={!isAwaiting}
+                                        className={`text-[11px] py-2 px-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 ${
+                                            !isAwaiting
+                                                ? 'bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/20 cursor-default'
+                                                : 'bg-[#F3EFEA] hover:bg-[#E8E2D9] text-[#1E1B18] cursor-pointer'
+                                        }`}
+                                    >
+                                        {!isAwaiting ? <Check className="w-3 h-3" /> : null}
+                                        <span>{!isAwaiting ? '✓ 1. Funds Held in Escrow' : '1. Lock in Escrow'}</span>
+                                    </button>
+
+                                    {/* Step 2: Courier Delivered (48h) */}
+                                    <button
+                                        onClick={() => handleUpdateStatus('DELIVERED_PENDING_BUFFER')}
+                                        disabled={isAwaiting || isBuffer || isReleased || isDisputed}
+                                        title={isAwaiting ? 'You must first hold funds in escrow' : 'Trigger 48h delivery inspection buffer'}
+                                        className={`text-[11px] py-2 px-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 ${
+                                            isAwaiting
+                                                ? 'bg-[#F3EFEA]/50 text-[#6B635B]/40 cursor-not-allowed border border-dashed border-[#E8E2D9]'
+                                                : isBuffer || isReleased
+                                                ? 'bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/20 cursor-default'
+                                                : 'bg-[#FFF4E5] hover:bg-[#FFE8CC] text-[#ED6C02] cursor-pointer'
+                                        }`}
+                                    >
+                                        {isBuffer || isReleased ? <Check className="w-3 h-3" /> : null}
+                                        <span>{isBuffer || isReleased ? '✓ 2. Courier Delivered (48h)' : '2. Courier Delivered (48h)'}</span>
+                                    </button>
+
+                                    {/* Step 3: Release Payout */}
+                                    <button
+                                        onClick={() => handleUpdateStatus('RELEASED')}
+                                        disabled={!isBuffer || isReleased}
+                                        title={!isBuffer ? 'Must be at delivery buffer stage before releasing payout' : 'Release escrow payout to artisan'}
+                                        className={`text-[11px] py-2 px-2.5 rounded-lg font-medium transition-colors flex items-center justify-center gap-1 ${
+                                            !isBuffer && !isReleased
+                                                ? 'bg-[#F3EFEA]/50 text-[#6B635B]/40 cursor-not-allowed border border-dashed border-[#E8E2D9]'
+                                                : isReleased
+                                                ? 'bg-[#EDF7ED] text-[#2E7D32] font-bold border border-[#2E7D32]/30 cursor-default'
+                                                : 'bg-[#EDF7ED] hover:bg-[#D4EDDA] text-[#2E7D32] font-bold cursor-pointer animate-pulse'
+                                        }`}
+                                    >
+                                        {isReleased ? <Check className="w-3 h-3" /> : null}
+                                        <span>{isReleased ? '✓ 3. Escrow Payout Released' : '3. Release Payout'}</span>
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })()}
                 </div>
             </div>
         </main>
