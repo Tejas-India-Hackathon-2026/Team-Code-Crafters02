@@ -5,192 +5,200 @@ import { createClient } from '../../../../lib/supabaseClient';
 import {
     Video,
     ShieldCheck,
+    AlertTriangle,
+    Eye,
+    ChevronLeft,
+    ChevronRight,
     Search,
+    Tag,
     ShoppingBag,
+    MessageSquare,
     Sparkles,
+    LayoutGrid,
     Play,
     CheckCircle2,
     X,
     Filter,
-    Star,
-    MapPin,
-    ArrowRight,
-    User,
 } from 'lucide-react';
 import Link from 'next/link';
 
 const CRAFT_CATEGORIES = [
     { id: 'all', label: 'All Crafts', icon: '✨' },
-    { id: 'bamboo', label: 'Bamboo & Coconut Craft', icon: '🎋' },
-    { id: 'metalcraft', label: 'Metalcraft & Brassware', icon: '🪚' },
-    { id: 'jewelry', label: 'Handmade Jewelry', icon: '💍' },
-    { id: 'stonecraft', label: 'Stone & Marble Craft', icon: '🗿' },
     { id: 'woodworking', label: 'Woodworking & Carving', icon: '🪵' },
     { id: 'pottery', label: 'Pottery & Ceramics', icon: '🏺' },
     { id: 'handloom', label: 'Handloom & Textiles', icon: '🧵' },
-    { id: 'painting', label: 'Traditional Painting & Folk Art', icon: '🎨' },
+    { id: 'metalcraft', label: 'Metalcraft & Brassware', icon: '🪚' },
     { id: 'leathercraft', label: 'Leathercraft', icon: '👜' },
+    { id: 'jewelry', label: 'Handmade Jewelry', icon: '💍' },
+    { id: 'stonecraft', label: 'Stone & Marble Craft', icon: '🗿' },
+    { id: 'painting', label: 'Traditional Painting & Folk Art', icon: '🎨' },
+    { id: 'bamboo', label: 'Bamboo & Cane Craft', icon: '🎋' },
     { id: 'terracotta', label: 'Terracotta & Clay Art', icon: '🪴' },
     { id: 'embroidery', label: 'Embroidery & Zardozi', icon: '🪡' },
+    { id: 'glasscraft', label: 'Glass & Mosaic Craft', icon: '✨' },
 ];
 
-interface ArtisanProductPill {
-    name: string;
-    price: number;
-}
+// Fallback demo reels to ensure every category has high-quality content out-of-the-box
+const MOCK_REELS = [
+    {
+        id: 'mock-1',
+        vendor_id: 'v1',
+        video_url: 'https://assets.mixkit.co/videos/preview/mixkit-potter-working-on-a-clay-vase-41712-large.mp4',
+        status: 'AUTO_APPROVED',
+        confidence_score: 0.94,
+        extracted_metadata: {
+            productTitle: 'Hand-Thrown Terracotta Urli & Vase',
+            category: 'pottery',
+            price: 2499,
+            description: 'Traditional wheel-thrown pottery with natural burnished glaze and studio stamp.',
+            summary: 'Artisan wheel-thrown ceramic process detected with high confidence.',
+            batch_marking: '#12/50',
+            logo_detected: true,
+            logo_matched: true,
+            liveness_verified: true,
+        },
+        created_at: new Date(Date.now() - 3600000).toISOString(),
+        vendor: {
+            full_name: 'Mitti Studio Pottery',
+            avatar_url: null,
+            vendor_verified: true,
+        },
+    },
+    {
+        id: 'mock-2',
+        vendor_id: 'v2',
+        video_url: 'https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-piece-of-wood-41716-large.mp4',
+        status: 'AUTO_APPROVED',
+        confidence_score: 0.91,
+        extracted_metadata: {
+            productTitle: 'Royal Sheesham Carved Armchair',
+            category: 'woodworking',
+            price: 18500,
+            description: 'Hand-chiseled floral relief in seasoned Rajasthan Sheesham wood.',
+            summary: 'Precision wood chisel carving and workshop branding verified.',
+            batch_marking: '#04/20',
+            logo_detected: true,
+            logo_matched: true,
+            liveness_verified: true,
+        },
+        created_at: new Date(Date.now() - 7200000).toISOString(),
+        vendor: {
+            full_name: 'Jaipur Heritage Woodcraft',
+            avatar_url: null,
+            vendor_verified: true,
+        },
+    },
+    {
+        id: 'mock-3',
+        vendor_id: 'v3',
+        video_url: 'https://assets.mixkit.co/videos/preview/mixkit-woman-weaving-on-a-loom-41713-large.mp4',
+        status: 'AUTO_APPROVED',
+        confidence_score: 0.96,
+        extracted_metadata: {
+            productTitle: 'Pure Mulberry Silk Handloom Saree',
+            category: 'handloom',
+            price: 12800,
+            description: 'Intricate pit-loom weaving with genuine gold zari motifs.',
+            summary: 'Traditional shuttle loom motion and maker presence verified.',
+            batch_marking: '#08/15',
+            logo_detected: true,
+            logo_matched: true,
+            liveness_verified: true,
+        },
+        created_at: new Date(Date.now() - 14400000).toISOString(),
+        vendor: {
+            full_name: 'Varanasi Weavers Guild',
+            avatar_url: null,
+            vendor_verified: true,
+        },
+    },
+    {
+        id: 'mock-4',
+        vendor_id: 'v4',
+        video_url: 'https://assets.mixkit.co/videos/preview/mixkit-blacksmith-hammering-glowing-iron-41717-large.mp4',
+        status: 'AUTO_APPROVED',
+        confidence_score: 0.89,
+        extracted_metadata: {
+            productTitle: 'Hand-Beaten Brass Temple Urli',
+            category: 'metalcraft',
+            price: 6200,
+            description: 'Traditional Moradabad hand-beaten bell metal brass with engraved border.',
+            summary: 'Hammered hot metal work and maker brand seal authenticated.',
+            batch_marking: '#02/30',
+            logo_detected: true,
+            logo_matched: true,
+            liveness_verified: true,
+        },
+        created_at: new Date(Date.now() - 28800000).toISOString(),
+        vendor: {
+            full_name: 'Moradabad Brass Masters',
+            avatar_url: null,
+            vendor_verified: true,
+        },
+    },
+    {
+        id: 'mock-5',
+        vendor_id: 'v5',
+        video_url: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-jeweler-working-with-gems-41718-large.mp4',
+        status: 'AUTO_APPROVED',
+        confidence_score: 0.93,
+        extracted_metadata: {
+            productTitle: 'Kundan Meenakari Silver Choker',
+            category: 'jewelry',
+            price: 9400,
+            description: 'Enamel foil inlay with natural uncut gemstones handcrafted in 92.5 silver.',
+            summary: 'Intricate gemstone setting and hallmarking verified.',
+            batch_marking: '#01/10',
+            logo_detected: true,
+            logo_matched: true,
+            liveness_verified: true,
+        },
+        created_at: new Date(Date.now() - 43200000).toISOString(),
+        vendor: {
+            full_name: 'Johari Bazaar Artisans',
+            avatar_url: null,
+            vendor_verified: true,
+        },
+    },
+];
 
-interface MakerCardItem {
+interface Reel {
     id: string;
     vendor_id: string;
-    vendorName: string;
-    avatarUrl: string;
-    rating: number;
-    reviewCount: number;
-    location: string;
-    category: string;
-    categoryLabel: string;
-    videoUrl: string;
-    confidenceScore: number;
-    story: string;
-    productPills: ArtisanProductPill[];
-    startingPrice: number;
-    batchMarking: string;
+    video_url: string;
+    status: string;
+    confidence_score: number | null;
+    extracted_metadata: {
+        productTitle?: string;
+        category?: string;
+        price?: number;
+        description?: string;
+        summary?: string;
+        batch_marking?: string;
+        logo_detected?: boolean;
+        logo_matched?: boolean;
+        liveness_verified?: boolean;
+    } | null;
+    created_at: string;
+    vendor: {
+        full_name: string;
+        avatar_url?: string | null;
+        vendor_verified: boolean;
+    } | null;
 }
-
-const FEATURED_MAKERS: MakerCardItem[] = [
-    {
-        id: 'maker-sukram',
-        vendor_id: 'v-sukram-01',
-        vendorName: 'Sukram Kashyap',
-        avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
-        rating: 4.95,
-        reviewCount: 47,
-        location: 'Bastar, Chhattisgarh',
-        category: 'metalcraft',
-        categoryLabel: 'Metalwork',
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-blacksmith-hammering-glowing-iron-41717-large.mp4',
-        confidenceScore: 0.988,
-        story: 'Creating 4,000-year-old Harappan lost-wax brass and bronze tribal sculptures, lamp stands, and deities using beeswax coils and riverbed clay molds.',
-        productPills: [
-            { name: 'Bastar Tribal Musician Dhokra Sculpture (Set of 3)', price: 5400 },
-            { name: 'Dhokra Ceremonial Nandi Bull Figurine', price: 3600 },
-        ],
-        startingPrice: 3200,
-        batchMarking: '#02/30',
-    },
-    {
-        id: 'maker-meenakshi',
-        vendor_id: 'v-meenakshi-02',
-        vendorName: 'Meenakshi Sundaram',
-        avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80',
-        rating: 4.97,
-        reviewCount: 73,
-        location: 'Thanjavur, Tamil Nadu',
-        category: 'jewelry',
-        categoryLabel: 'Jewelry',
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-jeweler-working-with-gems-41718-large.mp4',
-        confidenceScore: 0.969,
-        story: 'Crafting authentic 92.5 Hallmarked silver temple jewelry, silver filigree earrings, and gold-dipped bridal waistbands (Oddiyanam) with natural Kemp stones.',
-        productPills: [
-            { name: 'Tarakasi 92.5 Silver Filigree Peacock Jhumkas', price: 4800 },
-            { name: 'Kemp Temple Stone Silver Choker Necklace', price: 13500 },
-        ],
-        startingPrice: 4800,
-        batchMarking: '#01/10',
-    },
-    {
-        id: 'maker-haroon',
-        vendor_id: 'v-haroon-03',
-        vendorName: 'Mohammad Haroon',
-        avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
-        rating: 4.94,
-        reviewCount: 51,
-        location: 'Agra, Uttar Pradesh',
-        category: 'stonecraft',
-        categoryLabel: 'Stone Carving',
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-potter-working-on-a-clay-vase-41712-large.mp4',
-        confidenceScore: 0.979,
-        story: 'Preserving the Taj Mahal Parchin Kari technique. Inlaying semi-precious stones (Lapis Lazuli, Malachite, Jasper, Mother of Pearl) into pure Makrana white marble.',
-        productPills: [
-            { name: 'Makrana Marble Inlay Octagonal Tabletop (15 inch)', price: 16500 },
-            { name: 'Floral Inlaid Marble Jewelry Box with Velvet Tray', price: 6200 },
-        ],
-        startingPrice: 6200,
-        batchMarking: '#05/25',
-    },
-    {
-        id: 'maker-kavita',
-        vendor_id: 'v-kavita-04',
-        vendorName: 'Kavita Devi (Master Weaver)',
-        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-        rating: 4.98,
-        reviewCount: 89,
-        location: 'Varanasi, Uttar Pradesh',
-        category: 'handloom',
-        categoryLabel: 'Handloom',
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-weaving-on-a-loom-41713-large.mp4',
-        confidenceScore: 0.965,
-        story: 'Pure mulberry unbleached silk and hand-punched Jacquard graph cards. Pit-loom hand weaving with certified real gold and silver zari threads.',
-        productPills: [
-            { name: 'Pure Mulberry Silk Katan Banarasi Bridal Saree', price: 24500 },
-            { name: 'Kadhwa Weave Tanchoi Silk Stole (Silver Zari)', price: 8200 },
-        ],
-        startingPrice: 8200,
-        batchMarking: '#08/15',
-    },
-    {
-        id: 'maker-jaipur-wood',
-        vendor_id: 'v-jaipur-05',
-        vendorName: 'Jaipur Heritage Woodcraft',
-        avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&auto=format&fit=crop&q=80',
-        rating: 4.91,
-        reviewCount: 36,
-        location: 'Jaipur, Rajasthan',
-        category: 'woodworking',
-        categoryLabel: 'Woodworking',
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-piece-of-wood-41716-large.mp4',
-        confidenceScore: 0.942,
-        story: 'Hand-chiseled floral relief in seasoned Rajasthan Sheesham and Teak wood. Traditional dovetail joinery with natural beeswax burnish finish.',
-        productPills: [
-            { name: 'Royal Sheesham Carved Armchair (Teak Polish)', price: 18500 },
-            { name: 'Jharokha Carved Wall Mirror with Brass Accents', price: 5400 },
-        ],
-        startingPrice: 5400,
-        batchMarking: '#04/20',
-    },
-    {
-        id: 'maker-mitti',
-        vendor_id: 'v-mitti-06',
-        vendorName: 'Mitti Studio Pottery',
-        avatarUrl: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?w=150&auto=format&fit=crop&q=80',
-        rating: 4.96,
-        reviewCount: 64,
-        location: 'Khurja, Uttar Pradesh',
-        category: 'pottery',
-        categoryLabel: 'Pottery',
-        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-potter-working-on-a-clay-vase-41712-large.mp4',
-        confidenceScore: 0.954,
-        story: 'Wheel-thrown stoneware and terracotta pottery. Naturally glazed with river sediment and wood ash, kiln-fired at 1200°C for food-grade strength.',
-        productPills: [
-            { name: 'Hand-Thrown Terracotta Urli & Studio Vase', price: 2499 },
-            { name: 'Stoneware Hand-Glazed Dinner Set (12 Pcs)', price: 7800 },
-        ],
-        startingPrice: 2499,
-        batchMarking: '#12/50',
-    },
-];
 
 export default function ReelFeedPage() {
     const supabase = createClient();
-    const [makers, setMakers] = useState<MakerCardItem[]>(FEATURED_MAKERS);
+    const [reels, setReels] = useState<Reel[]>([]);
     const [loading, setLoading] = useState(true);
     const [isVendor, setIsVendor] = useState(false);
     const [activeCategory, setActiveCategory] = useState<string>('all');
     const [searchQuery, setSearchQuery] = useState<string>('');
-    const [activeModalVideo, setActiveModalVideo] = useState<MakerCardItem | null>(null);
+    const [viewMode, setViewMode] = useState<'grid' | 'reel'>('grid');
+    const [activeReelIndex, setActiveReelIndex] = useState(0);
 
     useEffect(() => {
-        fetchMakersAndReels();
+        fetchReels();
 
         const checkUserRole = async () => {
             const { data: { session } } = await supabase.auth.getSession();
@@ -225,169 +233,128 @@ export default function ReelFeedPage() {
         return () => subscription.unsubscribe();
     }, []);
 
-    const fetchMakersAndReels = async () => {
+    const fetchReels = async () => {
         setLoading(true);
         try {
-            const { data: dbReels } = await supabase
+            const { data } = await supabase
                 .from('verification_reels')
-                .select('*, vendor:profiles(id, full_name, avatar_url, vendor_verified)')
-                .in('status', ['VERIFIED', 'AUTO_APPROVED'])
+                .select('*, vendor:profiles(full_name, avatar_url, vendor_verified)')
+                .in('status', ['AUTO_APPROVED', 'VERIFIED', 'NEEDS_REVIEW', 'PENDING', 'PENDING_ADMIN_REVIEW'])
                 .order('created_at', { ascending: false })
-                .limit(20);
+                .limit(50);
 
-            if (dbReels && dbReels.length > 0) {
-                const formattedFromDb: MakerCardItem[] = dbReels.map((r: any, idx: number) => {
-                    const meta = r.extracted_metadata || {};
-                    const score = r.ai_confidence_score || r.confidence_score || 0.94;
-                    const catId = (meta.category || 'bamboo').toLowerCase();
-                    const catObj = CRAFT_CATEGORIES.find((c) => c.id === catId);
-
-                    const vendorName = r.vendor?.full_name || 'Khushboo Handicrafts';
-                    const avatarUrl = r.vendor?.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80';
-                    const productTitle = meta.productTitle || 'Hand-Painted Coconut Vase';
-                    const price = meta.price ? Number(meta.price) : 300;
-
-                    return {
-                        id: r.id || `db-${idx}`,
-                        vendor_id: r.vendor_id,
-                        vendorName,
-                        avatarUrl,
-                        rating: 4.96,
-                        reviewCount: 24 + idx * 3,
-                        location: 'Central India Craft Cluster',
-                        category: catId,
-                        categoryLabel: catObj ? catObj.label.split(' ')[0] : 'Coconut Craft',
-                        videoUrl: r.video_url,
-                        confidenceScore: score,
-                        story: meta.description || meta.summary || 'Handcrafted coconut peel and natural materials shaped and painted by hand in artisan workshop.',
-                        productPills: [
-                            {
-                                name: productTitle,
-                                price: price,
-                            },
-                        ],
-                        startingPrice: price,
-                        batchMarking: meta.batch_marking || '#08/50',
-                    };
-                });
-
-                // Combine real uploaded database reels at the front
-                setMakers([...formattedFromDb, ...FEATURED_MAKERS]);
+            if (data && data.length > 0) {
+                // Combine DB reels with curated demo reels
+                const combined = [...(data as Reel[]), ...MOCK_REELS];
+                setReels(combined);
             } else {
-                setMakers(FEATURED_MAKERS);
+                setReels(MOCK_REELS as Reel[]);
             }
-        } catch (err) {
-            console.warn('Error fetching reels from DB:', err);
-            setMakers(FEATURED_MAKERS);
+        } catch {
+            setReels(MOCK_REELS as Reel[]);
         } finally {
             setLoading(false);
         }
     };
 
-    // Filter makers by Category and Search Query
-    const filteredMakers = useMemo(() => {
-        return makers.filter((maker) => {
-            const itemCat = (maker.category || 'other').toLowerCase();
-            const makerName = (maker.vendorName || '').toLowerCase();
-            const location = (maker.location || '').toLowerCase();
-            const story = (maker.story || '').toLowerCase();
+    // Filter reels by Category and Search Query
+    const filteredReels = useMemo(() => {
+        return reels.filter((reel) => {
+            const meta = reel.extracted_metadata || {};
+            const itemCat = (meta.category || 'other').toLowerCase();
+            const itemTitle = (meta.productTitle || '').toLowerCase();
+            const itemDesc = (meta.description || '').toLowerCase();
+            const vendorName = (reel.vendor?.full_name || '').toLowerCase();
             const query = searchQuery.trim().toLowerCase();
 
+            // Category match
             const matchesCategory = activeCategory === 'all' || itemCat === activeCategory.toLowerCase();
+
+            // Search query match
             const matchesSearch =
                 !query ||
-                makerName.includes(query) ||
-                location.includes(query) ||
-                story.includes(query) ||
+                itemTitle.includes(query) ||
+                itemDesc.includes(query) ||
+                vendorName.includes(query) ||
                 itemCat.includes(query);
 
             return matchesCategory && matchesSearch;
         });
-    }, [makers, activeCategory, searchQuery]);
+    }, [reels, activeCategory, searchQuery]);
 
-    // Live search suggestions
+    // Live search suggestions based on product titles & categories
     const searchSuggestions = useMemo(() => {
         if (!searchQuery.trim()) return [];
         const query = searchQuery.toLowerCase();
         const suggestions = new Set<string>();
 
-        makers.forEach((m) => {
-            if (m.vendorName.toLowerCase().includes(query)) suggestions.add(m.vendorName);
-            if (m.location.toLowerCase().includes(query)) suggestions.add(m.location);
-            if (m.categoryLabel.toLowerCase().includes(query)) suggestions.add(m.categoryLabel);
+        reels.forEach((r) => {
+            const title = r.extracted_metadata?.productTitle;
+            const cat = r.extracted_metadata?.category;
+            const vendor = r.vendor?.full_name;
+
+            if (title && title.toLowerCase().includes(query)) suggestions.add(title);
+            if (vendor && vendor.toLowerCase().includes(query)) suggestions.add(vendor);
+            if (cat && cat.toLowerCase().includes(query)) {
+                const found = CRAFT_CATEGORIES.find((c) => c.id === cat);
+                if (found) suggestions.add(found.label);
+            }
         });
 
         return Array.from(suggestions).slice(0, 5);
-    }, [makers, searchQuery]);
+    }, [reels, searchQuery]);
+
+    const getConfidencePill = (score: number | null) => {
+        if (score === null || score === undefined) {
+            return { label: 'AI Reviewing', color: 'bg-[#FFF4E5] text-[#ED6C02]' };
+        }
+        const pct = Math.round(score * 100);
+        if (pct >= 85) {
+            return { label: `✓ ${pct}% AI Verified`, color: 'bg-[#EDF7ED] text-[#2E7D32]' };
+        }
+        return { label: `${pct}% AI Review`, color: 'bg-[#FFF4E5] text-[#ED6C02]' };
+    };
 
     return (
-        <main className="min-h-screen bg-[#FDFBF7] pb-20">
-            {/* ─── Video Modal Player when clicking "AI Reel" ─────────────────── */}
-            {activeModalVideo && (
-                <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fade-in">
-                    <div className="bg-black border border-white/20 rounded-3xl overflow-hidden shadow-modal max-w-sm w-full relative flex flex-col">
-                        {/* Close button */}
-                        <button
-                            onClick={() => setActiveModalVideo(null)}
-                            className="absolute top-4 right-4 z-20 w-8 h-8 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 cursor-pointer"
-                        >
-                            <X className="w-4 h-4" />
-                        </button>
-
-                        <div className="relative aspect-[9/16] bg-black">
-                            <video
-                                src={activeModalVideo.videoUrl}
-                                controls
-                                autoPlay
-                                playsInline
-                                className="w-full h-full object-cover"
-                            />
-
-                            {/* Top Badge */}
-                            <div className="absolute top-4 left-4 z-10">
-                                <span className="text-[11px] font-bold px-3 py-1 rounded-full bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/30 flex items-center gap-1 shadow-md">
-                                    <CheckCircle2 className="w-3.5 h-3.5" />
-                                    <span>AI VERIFIED ({(activeModalVideo.confidenceScore * 100).toFixed(1)}%)</span>
-                                </span>
-                            </div>
-
-                            {/* Bottom Info Overlay */}
-                            <div className="absolute bottom-4 left-4 right-4 bg-black/70 backdrop-blur-md p-4 rounded-2xl text-white border border-white/10">
-                                <h3 className="font-bold text-sm font-display mb-1">{activeModalVideo.vendorName}</h3>
-                                <p className="text-xs text-white/80 line-clamp-2 mb-3 leading-relaxed">{activeModalVideo.story}</p>
-                                <Link
-                                    href={`/messages?artisanId=${activeModalVideo.vendor_id}&vendorName=${encodeURIComponent(activeModalVideo.vendorName)}&productTitle=${encodeURIComponent(activeModalVideo.productPills[0]?.name || 'Handmade Craft')}&price=${activeModalVideo.startingPrice}&category=${encodeURIComponent(activeModalVideo.category)}`}
-                                    className="btn-primary text-xs py-2.5 w-full flex items-center justify-center gap-1.5 font-semibold text-center"
-                                >
-                                    <ShoppingBag className="w-3.5 h-3.5" />
-                                    <span>Commission Custom Order</span>
-                                </Link>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* ─── Top Header & Search Bar ───────────────────────────────────── */}
-            <div className="sticky top-14 z-40 bg-white/95 backdrop-blur-xl border-b border-[#E8E2D9] px-4 py-4 shadow-xs">
+        <main className="min-h-screen bg-[#FDFBF7] pb-16">
+            {/* Top Navigation & Search Bar */}
+            <div className="sticky top-14 z-40 bg-white/90 backdrop-blur-xl border-b border-[#E8E2D9] px-4 py-4 shadow-sm">
                 <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
                     {/* Header Title */}
-                    <div className="flex items-center gap-2.5">
-                        <div className="w-9 h-9 rounded-xl bg-[#C85A32]/10 text-[#C85A32] flex items-center justify-center">
-                            <Video className="w-5 h-5" />
+                    <div className="flex items-center gap-3 w-full md:w-auto justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="w-9 h-9 rounded-xl bg-[#C85A32]/10 text-[#C85A32] flex items-center justify-center">
+                                <Video className="w-5 h-5" />
+                            </div>
+                            <div>
+                                <h1 className="font-display font-bold text-base sm:text-lg text-[#1E1B18]">
+                                    Artisan Product Reels
+                                </h1>
+                                <p className="text-[11px] text-[#6B635B]">
+                                    Browse AI-verified handmade process videos by craft category
+                                </p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="font-display font-bold text-base sm:text-lg text-[#1E1B18]">
-                                Artisan Product Reels
-                            </h1>
-                            <p className="text-[11px] text-[#6B635B]">
-                                Browse AI-verified handmade process videos by craft category
-                            </p>
+
+                        {/* View Switcher (Mobile) */}
+                        <div className="flex md:hidden items-center bg-[#F3EFEA] rounded-lg p-0.5">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`p-1.5 rounded-md ${viewMode === 'grid' ? 'bg-white shadow-sm text-[#C85A32]' : 'text-[#6B635B]'}`}
+                            >
+                                <LayoutGrid className="w-4 h-4" />
+                            </button>
+                            <button
+                                onClick={() => setViewMode('reel')}
+                                className={`p-1.5 rounded-md ${viewMode === 'reel' ? 'bg-white shadow-sm text-[#C85A32]' : 'text-[#6B635B]'}`}
+                            >
+                                <Play className="w-4 h-4" />
+                            </button>
                         </div>
                     </div>
 
-                    {/* Search Input */}
-                    <div className="w-full md:max-w-md relative">
+                    {/* Search Bar with Live Suggestions */}
+                    <div className="relative w-full md:max-w-md">
                         <div className="relative flex items-center">
                             <Search className="absolute left-3.5 w-4 h-4 text-[#6B635B] pointer-events-none" />
                             <input
@@ -395,27 +362,27 @@ export default function ReelFeedPage() {
                                 placeholder="Search products, crafts (e.g. pottery, teakwood, saree)..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                style={{ paddingLeft: '2.5rem' }}
-                                className="w-full h-10 pr-4 text-xs bg-[#FAF8F5] border border-[#E8E2D9] rounded-xl outline-none focus:border-[#C85A32] focus:ring-2 focus:ring-[#C85A32]/10 transition-all placeholder:text-[#6B635B]"
+                                style={{ paddingLeft: '2.5rem', paddingRight: searchQuery ? '2.5rem' : '1rem' }}
+                                className="input-base shadow-sm"
                             />
                             {searchQuery && (
                                 <button
                                     onClick={() => setSearchQuery('')}
                                     className="absolute right-3 text-[#6B635B] hover:text-[#1E1B18]"
                                 >
-                                    <X className="w-3.5 h-3.5" />
+                                    <X className="w-4 h-4" />
                                 </button>
                             )}
                         </div>
 
                         {/* Search Suggestions Dropdown */}
                         {searchSuggestions.length > 0 && (
-                            <div className="absolute top-11 left-0 right-0 bg-white border border-[#E8E2D9] rounded-xl shadow-elevated z-50 overflow-hidden">
+                            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-[#E8E2D9] rounded-xl shadow-elevated overflow-hidden z-50 animate-fade-in">
                                 {searchSuggestions.map((sugg, i) => (
                                     <button
                                         key={i}
                                         onClick={() => setSearchQuery(sugg)}
-                                        className="w-full px-4 py-2.5 text-left text-xs font-medium text-[#1E1B18] hover:bg-[#FAF8F5] flex items-center justify-between border-b border-[#F3EFEA] last:border-0 cursor-pointer"
+                                        className="w-full px-4 py-2.5 text-left text-xs font-medium text-[#1E1B18] hover:bg-[#FDFBF7] flex items-center justify-between border-b border-[#F3EFEA] last:border-0 cursor-pointer"
                                     >
                                         <span>{sugg}</span>
                                         <span className="text-[10px] text-[#6B635B]">Filter →</span>
@@ -425,16 +392,39 @@ export default function ReelFeedPage() {
                         )}
                     </div>
 
-                    {/* Vendor Upload Button (Only if vendor mode is active) */}
-                    {isVendor && (
-                        <Link
-                            href="/verification/upload"
-                            className="btn-primary text-xs py-2 px-4 flex items-center gap-1.5 shrink-0"
-                        >
-                            <Video className="w-3.5 h-3.5" />
-                            Upload Product Reel
-                        </Link>
-                    )}
+                    {/* View Switcher (Desktop) */}
+                    <div className="hidden md:flex items-center gap-2">
+                        <div className="flex items-center bg-[#F3EFEA] rounded-lg p-0.5">
+                            <button
+                                onClick={() => setViewMode('grid')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                                    viewMode === 'grid' ? 'bg-white shadow-sm text-[#C85A32]' : 'text-[#6B635B] hover:text-[#1E1B18]'
+                                }`}
+                            >
+                                <LayoutGrid className="w-3.5 h-3.5" />
+                                Grid View
+                            </button>
+                            <button
+                                onClick={() => setViewMode('reel')}
+                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-semibold transition-all cursor-pointer ${
+                                    viewMode === 'reel' ? 'bg-white shadow-sm text-[#C85A32]' : 'text-[#6B635B] hover:text-[#1E1B18]'
+                                }`}
+                            >
+                                <Play className="w-3.5 h-3.5" />
+                                Reel Player
+                            </button>
+                        </div>
+
+                        {isVendor && (
+                            <Link
+                                href="/verification/upload"
+                                className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1.5"
+                            >
+                                <Video className="w-3.5 h-3.5" />
+                                Upload Product Reel
+                            </Link>
+                        )}
+                    </div>
                 </div>
 
                 {/* Horizontal Category Filter Pills */}
@@ -443,26 +433,24 @@ export default function ReelFeedPage() {
                         const isSelected = activeCategory === cat.id;
                         const count =
                             cat.id === 'all'
-                                ? makers.length
-                                : makers.filter((m) => m.category === cat.id).length;
+                                ? reels.length
+                                : reels.filter((r) => r.extracted_metadata?.category === cat.id).length;
 
                         return (
                             <button
                                 key={cat.id}
                                 onClick={() => setActiveCategory(cat.id)}
-                                className={`px-3.5 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
+                                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap flex items-center gap-1.5 transition-all cursor-pointer shrink-0 border ${
                                     isSelected
-                                        ? 'bg-[#C85A32] text-white border-[#C85A32] shadow-xs'
+                                        ? 'bg-[#C85A32] text-white border-[#C85A32] shadow-sm'
                                         : 'bg-white text-[#6B635B] border-[#E8E2D9] hover:border-[#C85A32]/50 hover:text-[#1E1B18]'
                                 }`}
                             >
                                 <span>{cat.icon}</span>
                                 <span>{cat.label}</span>
-                                <span
-                                    className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                                        isSelected ? 'bg-white/25 text-white' : 'bg-[#F3EFEA] text-[#6B635B]'
-                                    }`}
-                                >
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                                    isSelected ? 'bg-white/20 text-white' : 'bg-[#F3EFEA] text-[#6B635B]'
+                                }`}>
                                     {count}
                                 </span>
                             </button>
@@ -471,160 +459,198 @@ export default function ReelFeedPage() {
                 </div>
             </div>
 
-            {/* ─── Main Artisan Discovery Cards Grid ─────────────────────────── */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-8">
+            {/* Main Content Area */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
                 {loading ? (
                     <div className="flex flex-col items-center justify-center py-20">
-                        <p className="text-xs text-[#6B635B] animate-pulse-subtle">Loading verified master artisans...</p>
+                        <p className="text-xs text-[#6B635B] animate-pulse-subtle">Loading verified reels...</p>
                     </div>
-                ) : filteredMakers.length === 0 ? (
+                ) : filteredReels.length === 0 ? (
                     <div className="card p-12 text-center max-w-md mx-auto my-12 bg-white">
                         <div className="w-12 h-12 rounded-2xl bg-[#F3EFEA] flex items-center justify-center mx-auto mb-3 text-[#6B635B]">
                             <Filter className="w-6 h-6" />
                         </div>
                         <h3 className="text-base font-bold text-[#1E1B18] font-display">
-                            No artisan makers found
+                            No reels found in this category
                         </h3>
                         <p className="text-xs text-[#6B635B] mt-1 mb-4">
-                            {searchQuery ? `No matches for "${searchQuery}".` : 'Try selecting a different craft category.'}
+                            {searchQuery ? `No matches for "${searchQuery}".` : 'Be the first artisan to upload a verification reel in this category!'}
                         </p>
                         <button
-                            onClick={() => {
-                                setActiveCategory('all');
-                                setSearchQuery('');
-                            }}
+                            onClick={() => { setActiveCategory('all'); setSearchQuery(''); }}
                             className="btn-primary text-xs py-2 px-4"
                         >
                             Reset Category Filter
                         </button>
                     </div>
-                ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {filteredMakers.map((maker) => {
-                            const scorePct = (maker.confidenceScore * 100).toFixed(1);
+                ) : viewMode === 'grid' ? (
+                    /* ─── GRID VIEW: 9:16 Video Cards ───────────────────────── */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                        {filteredReels.map((reel) => {
+                            const meta = reel.extracted_metadata || {};
+                            const confidence = getConfidencePill(reel.confidence_score);
+                            const categoryLabel = CRAFT_CATEGORIES.find((c) => c.id === meta.category)?.label || 'Bespoke Craft';
 
                             return (
                                 <div
-                                    key={maker.id}
-                                    className="bg-white border border-[#E8E2D9] rounded-3xl p-5 shadow-card hover:shadow-elevated transition-all flex flex-col justify-between group"
+                                    key={reel.id}
+                                    className="card bg-white overflow-hidden group hover:shadow-elevated transition-all flex flex-col border border-[#E8E2D9]"
                                 >
-                                    <div>
-                                        {/* Top Media Video Player Box with Overlays */}
-                                        <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-black mb-4 group/media border border-[#E8E2D9]">
-                                            <video
-                                                src={maker.videoUrl}
-                                                controls
-                                                playsInline
-                                                preload="metadata"
-                                                className="w-full h-full object-cover"
-                                            />
+                                    {/* 9:16 Video Player Box */}
+                                    <div className="relative aspect-[9/16] bg-black overflow-hidden">
+                                        <video
+                                            src={reel.video_url}
+                                            controls
+                                            playsInline
+                                            preload="metadata"
+                                            className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform duration-300"
+                                        />
 
-                                            {/* Top Left: AI Verified Badge */}
-                                            <div className="absolute top-3 left-3 z-10 pointer-events-none">
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-[#2E7D32] border border-[#2E7D32]/40 shadow-xs">
-                                                    <CheckCircle2 className="w-3 h-3 text-[#2E7D32]" />
-                                                    <span>AI VERIFIED</span>
-                                                </span>
-                                            </div>
-
-                                            {/* Bottom Left: Craft Category Badge */}
-                                            <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
-                                                <span className="text-[11px] font-semibold bg-black/75 backdrop-blur-md text-white px-2.5 py-0.5 rounded-md">
-                                                    {maker.categoryLabel}
-                                                </span>
-                                            </div>
-
-                                            {/* Bottom Right: Interactive AI Reel Play Button */}
-                                            <div className="absolute bottom-3 right-3 z-10">
-                                                <button
-                                                    onClick={() => setActiveModalVideo(maker)}
-                                                    className="flex items-center gap-1 text-[11px] font-semibold bg-black/80 hover:bg-black text-white px-2.5 py-0.5 rounded-md backdrop-blur-md transition-colors cursor-pointer shadow-sm"
-                                                    title="Expand Full Reel"
-                                                >
-                                                    <Play className="w-3 h-3 text-white fill-white" />
-                                                    <span>AI Reel ({scorePct}%)</span>
-                                                </button>
-                                            </div>
+                                        {/* AI Verified Badge Overlay */}
+                                        <div className="absolute top-3 left-3 z-10">
+                                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm ${confidence.color}`}>
+                                                {confidence.label}
+                                            </span>
                                         </div>
 
-                                        {/* Artisan Profile Header */}
-                                        <div className="flex items-center gap-3 mb-2.5">
-                                            <div className="w-11 h-11 rounded-full overflow-hidden border border-[#E8E2D9] shrink-0 bg-[#C85A32]">
-                                                <img
-                                                    src={maker.avatarUrl}
-                                                    alt={maker.vendorName}
-                                                    className="w-full h-full object-cover"
-                                                />
+                                        {/* Batch Stamp Overlay */}
+                                        {meta.batch_marking && (
+                                            <div className="absolute top-3 right-3 z-10">
+                                                <span className="text-[10px] font-mono font-bold bg-black/60 backdrop-blur-md text-white px-2 py-0.5 rounded-full border border-white/20">
+                                                    {meta.batch_marking}
+                                                </span>
                                             </div>
-                                            <div className="min-w-0 flex-1">
-                                                <h3 className="font-display font-bold text-base text-[#1E1B18] truncate leading-tight">
-                                                    {maker.vendorName}
-                                                </h3>
-                                                <div className="flex items-center gap-1.5 text-xs text-[#6B635B] mt-0.5">
-                                                    <span className="flex items-center gap-1 text-[#E08E45] font-semibold">
-                                                        <Star className="w-3.5 h-3.5 fill-[#E08E45]" />
-                                                        {maker.rating} ({maker.reviewCount})
-                                                    </span>
-                                                    <span>•</span>
-                                                    <span className="flex items-center gap-0.5 truncate">
-                                                        <MapPin className="w-3 h-3 shrink-0 text-[#6B635B]" />
-                                                        {maker.location}
-                                                    </span>
-                                                </div>
-                                            </div>
-                                        </div>
+                                        )}
 
-                                        {/* Artisan Craft Story / Description */}
-                                        <p className="text-xs text-[#6B635B] leading-relaxed line-clamp-3 mb-4">
-                                            {maker.story}
-                                        </p>
-
-                                        {/* Product Offerings Pills */}
-                                        <div className="flex flex-col gap-1.5 mb-4">
-                                            {maker.productPills.map((pill, pIdx) => (
-                                                <div
-                                                    key={pIdx}
-                                                    className="bg-[#FAF8F5] border border-[#E8E2D9] rounded-xl px-3 py-1.5 text-[11px] text-[#1E1B18] font-medium flex items-center justify-between gap-2 truncate"
-                                                    title={`${pill.name} (₹${pill.price.toLocaleString('en-IN')})`}
-                                                >
-                                                    <span className="truncate">{pill.name}</span>
-                                                    <span className="font-mono font-bold text-[#C85A32] shrink-0">
-                                                        ₹{pill.price.toLocaleString('en-IN')}
-                                                    </span>
-                                                </div>
-                                            ))}
+                                        {/* Category Pill Tag */}
+                                        <div className="absolute bottom-3 left-3 z-10">
+                                            <span className="text-[10px] font-semibold bg-white/90 backdrop-blur-md text-[#1E1B18] px-2 py-0.5 rounded-md shadow-sm">
+                                                {categoryLabel}
+                                            </span>
                                         </div>
                                     </div>
 
-                                    {/* Card Footer: Starting Price & Action Buttons */}
-                                    <div className="flex items-center justify-between pt-3 border-t border-[#F3EFEA] mt-2">
+                                    {/* Product Details & Action Footer */}
+                                    <div className="p-4 flex-1 flex flex-col justify-between">
                                         <div>
-                                            <span className="text-[10px] font-semibold text-[#6B635B] block uppercase tracking-wider">
-                                                From
-                                            </span>
-                                            <span className="text-base font-bold text-[#C85A32] font-mono leading-none">
-                                                ₹{maker.startingPrice.toLocaleString('en-IN')}
-                                            </span>
+                                            <div className="flex items-center justify-between gap-2 mb-1">
+                                                <h3 className="font-display font-bold text-sm text-[#1E1B18] truncate" title={meta.productTitle}>
+                                                    {meta.productTitle || 'Handcrafted Item'}
+                                                </h3>
+                                                {meta.price ? (
+                                                    <span className="text-xs font-bold text-[#C85A32] font-mono shrink-0">
+                                                        ₹{meta.price.toLocaleString('en-IN')}
+                                                    </span>
+                                                ) : null}
+                                            </div>
+
+                                            {/* Maker Info */}
+                                            <div className="flex items-center gap-2 mb-2">
+                                                <div className="w-5 h-5 rounded-full bg-[#C85A32] text-white flex items-center justify-center text-[10px] font-bold overflow-hidden shrink-0">
+                                                    {reel.vendor?.avatar_url ? (
+                                                        <img src={reel.vendor.avatar_url} alt="Logo" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        reel.vendor?.full_name?.charAt(0) || 'M'
+                                                    )}
+                                                </div>
+                                                <span className="text-xs text-[#6B635B] truncate font-medium">
+                                                    {reel.vendor?.full_name || 'Verified Maker'}
+                                                </span>
+                                                {reel.vendor?.vendor_verified && (
+                                                    <CheckCircle2 className="w-3 h-3 text-[#2E7D32] shrink-0" />
+                                                )}
+                                            </div>
+
+                                            <p className="text-xs text-[#6B635B] line-clamp-2 leading-relaxed mb-3">
+                                                {meta.description || meta.summary || 'Handmade by verified artisan.'}
+                                            </p>
                                         </div>
 
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex gap-2 pt-2 border-t border-[#F3EFEA]">
                                             <Link
-                                                href={`/artisan?makerId=${maker.vendor_id}`}
-                                                className="border border-[#E8E2D9] bg-white hover:bg-[#FAF8F5] text-[#1E1B18] text-xs font-semibold px-3.5 py-2 rounded-xl transition-colors"
+                                                href={`/messages?artisanId=${reel.vendor_id}&reelId=${reel.id}&productTitle=${encodeURIComponent(meta.productTitle || 'Handmade Item')}&price=${meta.price || 0}&category=${encodeURIComponent(meta.category || 'craft')}&videoUrl=${encodeURIComponent(reel.video_url)}&vendorName=${encodeURIComponent(reel.vendor?.full_name || 'Artisan')}`}
+                                                className="btn-primary text-xs py-2 flex-1 text-center font-semibold flex items-center justify-center gap-1.5"
                                             >
-                                                Profile
+                                                <ShoppingBag className="w-3.5 h-3.5" />
+                                                <span>Order & Discuss</span>
                                             </Link>
                                             <Link
-                                                href={`/messages?artisanId=${maker.vendor_id}&vendorName=${encodeURIComponent(maker.vendorName)}&productTitle=${encodeURIComponent(maker.productPills[0]?.name || 'Handcrafted Craft')}&price=${maker.startingPrice}&category=${encodeURIComponent(maker.category)}`}
-                                                className="bg-[#C85A32] hover:bg-[#B04B26] text-white text-xs font-semibold px-4 py-2 rounded-xl shadow-xs transition-all cursor-pointer"
+                                                href="/projects/new"
+                                                className="btn-ghost text-xs p-2 flex items-center justify-center text-[#6B635B] hover:text-[#1E1B18]"
+                                                title="Custom Commission"
                                             >
-                                                Commission
+                                                <Sparkles className="w-4 h-4" />
                                             </Link>
                                         </div>
                                     </div>
                                 </div>
                             );
                         })}
+                    </div>
+                ) : (
+                    /* ─── IMMERSIVE REEL PLAYER MODE ────────────────────────── */
+                    <div className="max-w-md mx-auto flex flex-col items-center">
+                        {filteredReels[activeReelIndex] && (
+                            <div className="w-full aspect-[9/16] bg-black rounded-2xl overflow-hidden border border-[#E8E2D9] shadow-modal relative">
+                                <video
+                                    key={filteredReels[activeReelIndex].id}
+                                    src={filteredReels[activeReelIndex].video_url}
+                                    controls
+                                    autoPlay
+                                    playsInline
+                                    className="w-full h-full object-cover"
+                                />
+
+                                {/* Bottom Info Overlay */}
+                                <div className="absolute bottom-12 left-4 right-4 bg-black/60 backdrop-blur-md p-4 rounded-xl text-white border border-white/10 pointer-events-auto">
+                                    <div className="flex items-center justify-between mb-1">
+                                        <h3 className="font-bold text-sm font-display">
+                                            {filteredReels[activeReelIndex].extracted_metadata?.productTitle || 'Handmade Craft'}
+                                        </h3>
+                                        {filteredReels[activeReelIndex].extracted_metadata?.price && (
+                                            <span className="text-xs font-bold text-[#E08E45]">
+                                                ₹{filteredReels[activeReelIndex].extracted_metadata?.price?.toLocaleString('en-IN')}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <p className="text-xs text-white/80 line-clamp-2 mb-3">
+                                        {filteredReels[activeReelIndex].extracted_metadata?.description || filteredReels[activeReelIndex].extracted_metadata?.summary}
+                                    </p>
+                                    <div className="flex gap-2">
+                                        <Link
+                                            href={`/messages?artisanId=${filteredReels[activeReelIndex].vendor_id}&reelId=${filteredReels[activeReelIndex].id}&productTitle=${encodeURIComponent(filteredReels[activeReelIndex].extracted_metadata?.productTitle || 'Handmade Item')}&price=${filteredReels[activeReelIndex].extracted_metadata?.price || 0}&category=${encodeURIComponent(filteredReels[activeReelIndex].extracted_metadata?.category || 'craft')}&videoUrl=${encodeURIComponent(filteredReels[activeReelIndex].video_url)}&vendorName=${encodeURIComponent(filteredReels[activeReelIndex].vendor?.full_name || 'Artisan')}`}
+                                            className="btn-primary text-xs py-2 px-3 flex-1 text-center font-semibold flex items-center justify-center gap-1.5"
+                                        >
+                                            <ShoppingBag className="w-3.5 h-3.5" />
+                                            <span>Order & Inquire This Product</span>
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Navigation Buttons */}
+                        <div className="flex items-center justify-between w-full mt-4 px-4">
+                            <button
+                                onClick={() => setActiveReelIndex(Math.max(0, activeReelIndex - 1))}
+                                disabled={activeReelIndex === 0}
+                                className="btn-ghost text-xs py-2 px-4 flex items-center gap-1 disabled:opacity-40"
+                            >
+                                <ChevronLeft className="w-4 h-4" />
+                                Previous
+                            </button>
+                            <span className="text-xs font-mono text-[#6B635B]">
+                                {activeReelIndex + 1} / {filteredReels.length}
+                            </span>
+                            <button
+                                onClick={() => setActiveReelIndex(Math.min(filteredReels.length - 1, activeReelIndex + 1))}
+                                disabled={activeReelIndex === filteredReels.length - 1}
+                                className="btn-ghost text-xs py-2 px-4 flex items-center gap-1 disabled:opacity-40"
+                            >
+                                Next
+                                <ChevronRight className="w-4 h-4" />
+                            </button>
+                        </div>
                     </div>
                 )}
             </div>
