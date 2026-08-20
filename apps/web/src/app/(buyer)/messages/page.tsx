@@ -33,6 +33,7 @@ interface ProductDiscussion {
     startedAt: string;
     projectId?: string;
     proposalText?: string;
+    orderId?: string;
 }
 
 interface ConversationItem {
@@ -830,7 +831,7 @@ function MessagesContent() {
                                     grossPrice={activeDiscussion?.price || 24500}
                                     isVendor={userProfile?.is_vendor || false}
                                     isVerified={userProfile?.vendor_verified || false}
-                                    isFinalized={activeDiscussion?.status === 'ORDER_FINALIZED'}
+                                    isFinalized={false}
                                     escrowStatus={currentEscrowOrder?.status || paramEscrowStatus || null}
                                     orderId={currentEscrowOrder?.id || paramOrderId || null}
                                     onSendQuoteMessage={(quoteStr) => sendMessage(quoteStr)}
