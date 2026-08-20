@@ -18,7 +18,7 @@ export interface EscrowStatusBadgeProps {
 }
 
 /** EscrowStatusBadge renders dual-rail statutory escrow states with accessible color tokens. */
-export function EscrowStatusBadge({ status, className = '' }: EscrowStatusBadgeProps): JSX.Element {
+export function EscrowStatusBadge({ status, className = '' }: EscrowStatusBadgeProps): React.ReactNode {
     const config: Record<string, { label: string; bg: string; text: string; icon: React.ComponentType<{ className?: string }> }> = {
         INITIATED: { label: 'Payment Initiated', bg: 'bg-[#FAF8F5]', text: 'text-[#6B635B]', icon: Clock },
         FUNDED: { label: 'Escrow Locked', bg: 'bg-[#EDF7ED]', text: 'text-[#2E7D32]', icon: Lock },
