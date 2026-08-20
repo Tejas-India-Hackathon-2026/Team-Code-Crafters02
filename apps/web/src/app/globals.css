@@ -249,3 +249,36 @@ code, pre, .font-mono {
   background: #F3EFEA;
   border-color: #6B635B;
 }
+
+/* ── Kinto Atmosphere Utilities ─────────────────────── */
+.kinto-dot-grid {
+  background-image: radial-gradient(circle, #78716c 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.kinto-glass {
+  background-color: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+@keyframes textShimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+.animate-text-shimmer {
+  background: linear-gradient(90deg, #C85A32 0%, #E08E45 50%, #C85A32 100%);
+  background-size: 200% auto;
+  color: transparent;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation: textShimmer 4s ease infinite;
+}

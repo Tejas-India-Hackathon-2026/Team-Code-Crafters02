@@ -1,117 +1,229 @@
+'use client';
+
 import Link from 'next/link';
-import { ShieldCheck, Video, MessageSquare, Package, ArrowRight, Sparkles, Search, CheckCircle2, Play, Award, Lock, Zap } from 'lucide-react';
+import {
+    ShieldCheck,
+    Video,
+    MessageSquare,
+    Package,
+    ArrowRight,
+    Sparkles,
+    Play,
+    Award,
+    Lock,
+    Star,
+    CheckCircle2,
+    ChevronRight,
+} from 'lucide-react';
 import { AnimatedNumber } from '../components/ui/animated-number';
+import { KintoCard, KintoBadge } from '../components/ui/kinto-card';
 
 const FEATURED_CATEGORIES = [
-    { id: 'pottery', label: 'Pottery & Ceramics', icon: '🏺', reelsCount: '18 Reels', desc: 'Wheel-thrown clay urlis & terracotta decor' },
-    { id: 'woodworking', label: 'Woodworking & Carving', icon: '🪵', reelsCount: '24 Reels', desc: 'Hand-chiseled Sheesham & Teak furniture' },
-    { id: 'handloom', label: 'Handloom & Textiles', icon: '🧵', reelsCount: '32 Reels', desc: 'Varanasi silk & Chanderi pit-loom weaves' },
-    { id: 'metalcraft', label: 'Metalcraft & Brassware', icon: '🪚', reelsCount: '15 Reels', desc: 'Moradabad beaten brass & bell metal art' },
-    { id: 'jewelry', label: 'Handmade Jewelry', icon: '💍', reelsCount: '29 Reels', desc: 'Kundan Meenakari & Jaipur gemstone silver' },
-    { id: 'painting', label: 'Folk Art & Painting', icon: '🎨', reelsCount: '12 Reels', desc: 'Madhubani, Pattachitra & Pichwai canvases' },
+    { id: 'pottery', label: 'Pottery & Ceramics', index: '01', icon: '🏺', reelsCount: '18 Reels', desc: 'Wheel-thrown clay urlis & terracotta studio decor' },
+    { id: 'woodworking', label: 'Woodworking & Carving', index: '02', icon: '🪵', reelsCount: '24 Reels', desc: 'Hand-chiseled Sheesham & Teak furniture with brass inlay' },
+    { id: 'handloom', label: 'Handloom & Textiles', index: '03', icon: '🧵', reelsCount: '32 Reels', desc: 'Varanasi pure silk & Chanderi pit-loom weaves' },
+    { id: 'metalcraft', label: 'Metalcraft & Brassware', index: '04', icon: '🪚', reelsCount: '15 Reels', desc: 'Moradabad beaten brass & temple bell metal art' },
+    { id: 'jewelry', label: 'Handmade Jewelry', index: '05', icon: '💍', reelsCount: '29 Reels', desc: 'Kundan Meenakari & Jaipur gemstone silver' },
+    { id: 'painting', label: 'Folk Art & Painting', index: '06', icon: '🎨', reelsCount: '12 Reels', desc: 'Madhubani, Pattachitra & Pichwai canvases' },
 ];
 
 export default function HomePage(): React.ReactNode {
     return (
-        <main className="min-h-screen bg-[#FAF7F2]" aria-label="Main marketplace landing content">
-            {/* Hero Section */}
-            <section className="relative overflow-hidden">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-24">
-                    <div className="max-w-3xl">
-                        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 bg-[#EDF7ED] border border-[#2E7D32]/20 text-[#2C4A3E] rounded-full text-xs font-semibold mb-6 shadow-xs">
-                            <ShieldCheck className="w-3.5 h-3.5 text-[#2E7D32]" />
-                            AI-Verified Artisan Marketplace
+        <main className="min-h-screen bg-[#FAF7F2] text-stone-900 overflow-hidden" aria-label="Main marketplace landing content">
+            {/* ─── HERO SECTION ─────────────────────────────────────────────────── */}
+            <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
+                {/* Dot Matrix Atmosphere with Radial Mask */}
+                <div
+                    aria-hidden="true"
+                    className="pointer-events-none absolute inset-0 opacity-[0.15] kinto-dot-grid [mask-image:radial-gradient(ellipse_60%_50%_at_50%_40%,#000_70%,transparent_100%)]"
+                />
+
+                {/* Subtle Ambient Radial Orbs */}
+                <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[700px] h-[350px] bg-gradient-to-b from-[#C85A32]/10 via-[#E08E45]/5 to-transparent rounded-full blur-3xl pointer-events-none -z-10" />
+
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+                    {/* Centered Top Badge & Title */}
+                    <div className="text-center max-w-3xl mx-auto mb-8">
+                        <div className="inline-flex mb-4">
+                            <KintoBadge variant="brand" dot={true}>
+                                AI-VERIFIED ARTISAN MARKETPLACE
+                            </KintoBadge>
                         </div>
 
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold text-[#1E1B18] font-display leading-tight tracking-tight">
+                        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-stone-950 font-display leading-[1.08] tracking-tight">
                             Handmade,{' '}
-                            <span className="text-[#C85A32]">Heart-made.</span>
+                            <em className="animate-text-shimmer not-italic font-serif">Heart-made.</em>
                             <br />
                             Verified & Trusted.
                         </h1>
 
-                        <p className="mt-5 text-base sm:text-lg text-[#6B635B] max-w-xl leading-relaxed font-normal">
-                            Commission bespoke handcrafted goods from verified Indian artisans.
-                            Every piece is verified with 9:16 process video reels matching registered maker logos.
-                        </p>
+                        {/* Kinto Editorial Divider Line */}
+                        <div className="h-px bg-gradient-to-r from-transparent via-stone-300 to-transparent my-6 max-w-lg mx-auto" />
+                    </div>
 
-                        <div className="mt-8 flex flex-wrap gap-3">
-                            <Link
-                                href="/projects/new"
-                                className="btn-primary text-sm py-3 px-6 shadow-elevated"
-                            >
-                                Post a Commission
-                                <ArrowRight className="w-4 h-4" />
-                            </Link>
-                            <Link
-                                href="/verification/feed"
-                                className="btn-secondary text-sm py-3 px-6 flex items-center gap-2 bg-white hover:bg-[#FAF7F2] border border-[#E8E2D9]"
-                            >
-                                <Play className="w-4 h-4 text-[#E08E45]" />
-                                Explore Category Reels
-                            </Link>
+                    {/* Two-Column Editorial Hero Grid */}
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
+                        {/* Left Column: Mission, CTAs, Trust Tags */}
+                        <div className="lg:col-span-7 flex flex-col justify-center">
+                            <p className="text-base sm:text-lg text-stone-600 leading-relaxed font-normal max-w-xl mb-8">
+                                Commission bespoke handcrafted goods directly from master Indian artisans.
+                                Every creation is verified via 9:16 process video reels matched to registered workshop maker stamps, protected by dual-rail escrow.
+                            </p>
+
+                            <div className="flex flex-wrap items-center gap-3.5 mb-10">
+                                <Link
+                                    href="/projects/new"
+                                    className="btn-primary text-sm py-3 px-6 rounded-full font-semibold shadow-sm hover:shadow-md flex items-center gap-2"
+                                >
+                                    <span>Post a Commission</span>
+                                    <ArrowRight className="w-4 h-4" />
+                                </Link>
+                                <Link
+                                    href="/verification/feed"
+                                    className="btn-ghost text-sm py-3 px-5 rounded-full font-medium bg-white/80 border border-stone-200/90 text-stone-800 hover:bg-stone-100 flex items-center gap-2 shadow-2xs"
+                                >
+                                    <Play className="w-3.5 h-3.5 text-[#C85A32] fill-[#C85A32]" />
+                                    <span>Explore Video Reels</span>
+                                    <ChevronRight className="w-3.5 h-3.5 text-stone-400" />
+                                </Link>
+                            </div>
+
+                            {/* Kinto Monospaced Micro Feature Tags */}
+                            <div className="flex flex-wrap gap-x-5 gap-y-2.5 font-mono text-xs text-stone-600">
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#2E7D32]" />
+                                    Gemini AI Certified
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#C85A32]" />
+                                    Dual-Rail Escrow
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-[#ED6C02]" />
+                                    48h Dispute Buffer
+                                </span>
+                                <span className="flex items-center gap-1.5">
+                                    <span className="w-1.5 h-1.5 rounded-full bg-stone-500" />
+                                    Section 194-O TDS
+                                </span>
+                            </div>
                         </div>
 
-                        {/* Live Animated Precision & Trust Stats */}
-                        <div className="mt-12 pt-8 border-t border-[#E8E2D9]/70 grid grid-cols-3 gap-4 max-w-xl">
-                            <div>
-                                <div className="text-xl sm:text-2xl font-bold font-display text-[#1E1B18] flex items-center gap-0.5">
-                                    <AnimatedNumber value={98} suffix="%" />
+                        {/* Right Column: Kinto Hero Interactive Showcase Card */}
+                        <div className="lg:col-span-5 relative">
+                            <div className="relative group/showcase">
+                                {/* Ambient Glow under card */}
+                                <div className="absolute -inset-1 rounded-3xl bg-gradient-to-r from-[#C85A32]/20 via-[#E08E45]/15 to-[#2E7D32]/20 blur-xl opacity-70 group-hover/showcase:opacity-100 transition-opacity" />
+
+                                <div className="relative bg-white/95 backdrop-blur-xl border border-stone-200/90 rounded-2xl p-5 sm:p-6 shadow-xl transition-transform duration-300 group-hover/showcase:-translate-y-1">
+                                    {/* Card Header */}
+                                    <div className="flex items-center justify-between pb-3.5 mb-3.5 border-b border-stone-100">
+                                        <div className="flex items-center gap-1.5">
+                                            <Star className="w-3.5 h-3.5 text-[#C85A32] fill-[#C85A32]" />
+                                            <span className="font-mono text-[11px] font-bold text-[#C85A32] tracking-wider uppercase">
+                                                AI Vision Stamp Certified
+                                            </span>
+                                        </div>
+                                        <span className="font-mono text-[10px] text-stone-400">
+                                            Just Now
+                                        </span>
+                                    </div>
+
+                                    {/* Card Quote / Highlight */}
+                                    <div className="mb-4">
+                                        <blockquote className="border-l-2 border-[#C85A32] pl-3 italic font-serif text-stone-800 text-sm leading-snug mb-2">
+                                            &ldquo;Hand-chiseled seasoned Sheesham table with brass inlay work and natural honey wax polish.&rdquo;
+                                        </blockquote>
+                                        <p className="text-xs text-stone-500 leading-relaxed">
+                                            Gemini 2.5 Flash matched the physical workshop stamp on video frame #142 with 98.4% brand confidence.
+                                        </p>
+                                    </div>
+
+                                    {/* Verification Milestone Visualizer */}
+                                    <div className="bg-stone-50/90 rounded-xl p-3 border border-stone-200/70 mb-4 flex flex-col gap-2">
+                                        <div className="flex items-center justify-between text-xs">
+                                            <span className="font-medium text-stone-700">Maker: Raja Ram (Moradabad)</span>
+                                            <span className="font-mono font-bold text-[#2E7D32]">₹14,800 Locked</span>
+                                        </div>
+                                        <div className="w-full bg-stone-200 h-1.5 rounded-full overflow-hidden">
+                                            <div className="bg-[#2E7D32] h-full w-[98.4%]" />
+                                        </div>
+                                    </div>
+
+                                    {/* Card Footer Badges */}
+                                    <div className="flex items-center justify-between pt-3 border-t border-stone-100">
+                                        <div className="flex gap-1.5">
+                                            <KintoBadge variant="success" dot={false}>
+                                                98.4% MATCH
+                                            </KintoBadge>
+                                            <KintoBadge variant="brand" dot={false}>
+                                                ESCROW HELD
+                                            </KintoBadge>
+                                        </div>
+                                        <span className="font-mono text-[10px] text-stone-400">
+                                            Batch #KG-2026
+                                        </span>
+                                    </div>
                                 </div>
-                                <p className="text-[11px] font-medium text-[#6B635B] mt-0.5 flex items-center gap-1">
-                                    <ShieldCheck className="w-3 h-3 text-[#2E7D32]" />
-                                    AI Precision Rate
-                                </p>
-                            </div>
-                            <div>
-                                <div className="text-xl sm:text-2xl font-bold font-display text-[#1E1B18] flex items-center gap-0.5">
-                                    <AnimatedNumber value={100} suffix="%" />
-                                </div>
-                                <p className="text-[11px] font-medium text-[#6B635B] mt-0.5 flex items-center gap-1">
-                                    <Lock className="w-3 h-3 text-[#C85A32]" />
-                                    Escrow Protection
-                                </p>
-                            </div>
-                            <div>
-                                <div className="text-xl sm:text-2xl font-bold font-display text-[#1E1B18] flex items-center gap-0.5">
-                                    <AnimatedNumber value={48} suffix="h" />
-                                </div>
-                                <p className="text-[11px] font-medium text-[#6B635B] mt-0.5 flex items-center gap-1">
-                                    <Award className="w-3 h-3 text-[#E08E45]" />
-                                    Inspection Buffer
-                                </p>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                {/* Decorative gradient orbs */}
-                <div className="absolute top-20 right-0 w-96 h-96 bg-[#C85A32]/8 rounded-full blur-3xl pointer-events-none" />
-                <div className="absolute bottom-0 right-40 w-72 h-72 bg-[#E08E45]/10 rounded-full blur-3xl pointer-events-none" />
+                    {/* Live Metric Count-up Tiles */}
+                    <div className="mt-16 pt-8 border-t border-stone-200/80 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-4xl mx-auto">
+                        <KintoCard hoverEffect={false} className="p-4 bg-white/70">
+                            <div className="text-2xl font-bold font-display text-stone-900 flex items-center gap-0.5">
+                                <AnimatedNumber value={98} suffix="%" />
+                            </div>
+                            <p className="text-xs font-mono text-stone-500 mt-1 flex items-center gap-1.5">
+                                <ShieldCheck className="w-3.5 h-3.5 text-[#2E7D32]" />
+                                Gemini AI Precision
+                            </p>
+                        </KintoCard>
+                        <KintoCard hoverEffect={false} className="p-4 bg-white/70">
+                            <div className="text-2xl font-bold font-display text-stone-900 flex items-center gap-0.5">
+                                <AnimatedNumber value={100} suffix="%" />
+                            </div>
+                            <p className="text-xs font-mono text-stone-500 mt-1 flex items-center gap-1.5">
+                                <Lock className="w-3.5 h-3.5 text-[#C85A32]" />
+                                Escrow Protection
+                            </p>
+                        </KintoCard>
+                        <KintoCard hoverEffect={false} className="p-4 bg-white/70">
+                            <div className="text-2xl font-bold font-display text-stone-900 flex items-center gap-0.5">
+                                <AnimatedNumber value={48} suffix="h" />
+                            </div>
+                            <p className="text-xs font-mono text-stone-500 mt-1 flex items-center gap-1.5">
+                                <Award className="w-3.5 h-3.5 text-[#ED6C02]" />
+                                Post-Delivery Buffer
+                            </p>
+                        </KintoCard>
+                    </div>
+                </div>
             </section>
 
-            {/* Category Discovery Section for Buyers */}
-            <section className="border-t border-[#E8E2D9] bg-white py-16 sm:py-20" aria-label="Handcrafted categories showcase">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            {/* ─── CATEGORY DISCOVERY SECTION ───────────────────────────────────── */}
+            <section className="border-t border-stone-200/80 bg-white/60 py-16 sm:py-24" aria-label="Handcrafted categories showcase">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                         <div>
                             <span className="text-xs font-bold text-[#C85A32] uppercase tracking-widest block mb-2 font-mono">
-                                Explore By Craft Category
+                                Curated Indian Guilds
                             </span>
-                            <h2 className="text-2xl sm:text-3xl font-bold text-[#1E1B18] font-display">
-                                Verified Video Reels by Category
+                            <h2 className="text-3xl sm:text-4xl font-extrabold text-stone-900 font-display tracking-tight">
+                                Handcrafted Categories
                             </h2>
-                            <p className="text-xs sm:text-sm text-[#6B635B] mt-1">
-                                Watch real workshop process videos matching maker brand logos
+                            <p className="text-sm text-stone-500 mt-1">
+                                Discover authentic video reels and custom craft commissions across verified regional guilds.
                             </p>
                         </div>
 
                         <Link
                             href="/verification/feed"
-                            className="text-xs font-bold text-[#C85A32] hover:underline flex items-center gap-1 shrink-0"
+                            className="text-xs font-semibold text-[#C85A32] hover:text-[#B04B26] flex items-center gap-1 font-mono shrink-0 group"
                         >
-                            <span>View All Category Feeds</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <span>EXPLORE ALL FEEDS</span>
+                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                         </Link>
                     </div>
 
@@ -119,102 +231,99 @@ export default function HomePage(): React.ReactNode {
                         {FEATURED_CATEGORIES.map((cat) => (
                             <Link
                                 key={cat.id}
-                                href={`/verification/feed`}
-                                className="card p-5 bg-[#FDFBF7] hover:bg-white hover:border-[#C85A32]/50 transition-all hover:shadow-elevated group flex flex-col justify-between"
+                                href="/verification/feed"
+                                className="group block"
                             >
-                                <div>
-                                    <div className="flex items-center justify-between mb-3">
-                                        <span className="text-2xl">{cat.icon}</span>
-                                        <span className="text-[10px] font-semibold bg-[#EDF7ED] text-[#2C4A3E] px-2 py-0.5 rounded-full flex items-center gap-1">
-                                            <ShieldCheck className="w-3 h-3" />
-                                            {cat.reelsCount}
+                                <KintoCard glow className="h-full flex flex-col justify-between p-6">
+                                    <div>
+                                        <div className="flex items-center justify-between mb-4">
+                                            <span className="text-2xl">{cat.icon}</span>
+                                            <span className="font-mono text-xs font-bold text-[#C85A32]">
+                                                {cat.index}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-base font-bold text-stone-900 font-display group-hover:text-[#C85A32] transition-colors mb-1.5">
+                                            {cat.label}
+                                        </h3>
+                                        <p className="text-xs text-stone-600 leading-relaxed mb-4">
+                                            {cat.desc}
+                                        </p>
+                                    </div>
+
+                                    <div className="pt-3 border-t border-stone-100 flex items-center justify-between text-xs font-mono font-medium text-stone-500 group-hover:text-[#C85A32] transition-colors">
+                                        <span>{cat.reelsCount}</span>
+                                        <span className="flex items-center gap-1">
+                                            Watch <ArrowRight className="w-3 h-3" />
                                         </span>
                                     </div>
-                                    <h3 className="text-sm font-bold text-[#1E1B18] font-display group-hover:text-[#C85A32] transition-colors">
-                                        {cat.label}
-                                    </h3>
-                                    <p className="text-xs text-[#6B635B] mt-1 leading-relaxed">
-                                        {cat.desc}
-                                    </p>
-                                </div>
-
-                                <div className="mt-4 pt-3 border-t border-[#E8E2D9] flex items-center justify-between text-xs font-semibold text-[#C85A32]">
-                                    <span className="flex items-center gap-1">
-                                        <Play className="w-3 h-3" /> Watch Reels
-                                    </span>
-                                    <span>→</span>
-                                </div>
+                                </KintoCard>
                             </Link>
                         ))}
                     </div>
                 </div>
             </section>
 
-            {/* How It Works */}
-            <section className="border-t border-[#E8E2D9] bg-[#FDFBF7] py-16 sm:py-20" aria-label="How Karigar Kart marketplace works">
-                <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                    <div className="text-center mb-12">
-                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C85A32] uppercase tracking-widest mb-3">
+            {/* ─── HOW IT WORKS SECTION ─────────────────────────────────────────── */}
+            <section className="border-t border-stone-200/80 bg-[#FAF7F2] py-16 sm:py-24" aria-label="How Karigar Kart marketplace works">
+                <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+                    <div className="text-center mb-16 max-w-2xl mx-auto">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C85A32] uppercase tracking-widest font-mono mb-2">
                             <Sparkles className="w-3.5 h-3.5" />
-                            How It Works
+                            VERIFICATION PIPELINE
                         </span>
-                        <h2 className="text-2xl sm:text-3xl font-bold text-[#1E1B18] font-display">
-                            From Commission to Doorstep
+                        <h2 className="text-3xl sm:text-4xl font-extrabold text-stone-900 font-display tracking-tight">
+                            From Workshop to Doorstep
                         </h2>
+                        <p className="text-sm text-stone-500 mt-2">
+                            How we guarantee authenticity, safe payouts, and complete peace of mind.
+                        </p>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
                         {[
                             {
-                                icon: Video,
                                 step: '01',
+                                icon: Video,
                                 title: 'AI Verification',
-                                desc: 'Artisans upload workshop reels. Gemini Vision matches physical stamps against registered brand logos.',
-                                color: 'text-[#C85A32]',
-                                bg: 'bg-[#C85A32]/8',
+                                desc: 'Artisans upload 9:16 process reels. Gemini Vision inspects frames matching registered maker stamps.',
                             },
                             {
-                                icon: MessageSquare,
                                 step: '02',
-                                title: 'Secure Chat & Quote',
-                                desc: 'Ingress-sanitized messaging with in-chat milestone quotes and TDS-compliant pricing.',
-                                color: 'text-[#2C4A3E]',
-                                bg: 'bg-[#2C4A3E]/8',
+                                icon: MessageSquare,
+                                title: 'Direct Messaging',
+                                desc: 'Ingress-sanitized chat with live in-chat TDS-compliant milestone quotes and proposals.',
                             },
                             {
-                                icon: Package,
                                 step: '03',
-                                title: 'Escrow Protection',
-                                desc: 'Funds locked in dual-rail escrow. 48-hour dispute buffer after carrier-confirmed delivery.',
-                                color: 'text-[#E08E45]',
-                                bg: 'bg-[#E08E45]/10',
+                                icon: Lock,
+                                title: 'Dual-Rail Escrow',
+                                desc: 'Funds secured in bank nodal buffer until carrier confirms delivery with a 48h inspection window.',
                             },
                             {
-                                icon: ShieldCheck,
                                 step: '04',
-                                title: 'Admin Triage',
-                                desc: 'HITL review queue for edge cases. Human oversight ensures fair resolution of disputes.',
-                                color: 'text-[#2E7D32]',
-                                bg: 'bg-[#2E7D32]/8',
+                                icon: ShieldCheck,
+                                title: 'Tax & Compliance',
+                                desc: 'Section 194-O statutory TDS calculations automated for transparent artisan disbursements.',
                             },
                         ].map((item) => (
-                            <div
-                                key={item.step}
-                                className="relative p-6 bg-white border border-[#E8E2D9] rounded-xl group hover:border-[#C85A32]/30 transition-all hover:shadow-card"
-                            >
-                                <div className={`w-10 h-10 ${item.bg} rounded-xl flex items-center justify-center mb-4`}>
-                                    <item.icon className={`w-5 h-5 ${item.color}`} />
+                            <KintoCard key={item.step} className="p-5 flex flex-col justify-between">
+                                <div>
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="w-9 h-9 rounded-xl bg-stone-100 text-[#C85A32] flex items-center justify-center">
+                                            <item.icon className="w-4 h-4" />
+                                        </div>
+                                        <span className="font-mono text-xs font-bold text-stone-400">
+                                            {item.step}
+                                        </span>
+                                    </div>
+                                    <h3 className="font-display font-bold text-sm text-stone-900 mb-1.5">
+                                        {item.title}
+                                    </h3>
+                                    <p className="text-xs text-stone-600 leading-relaxed">
+                                        {item.desc}
+                                    </p>
                                 </div>
-                                <span className="text-[10px] font-mono text-[#6B635B] uppercase tracking-widest">
-                                    Step {item.step}
-                                </span>
-                                <h3 className="text-sm font-bold text-[#1E1B18] mt-1 mb-2 font-display">
-                                    {item.title}
-                                </h3>
-                                <p className="text-xs text-[#6B635B] leading-relaxed">
-                                    {item.desc}
-                                </p>
-                            </div>
+                            </KintoCard>
                         ))}
                     </div>
                 </div>

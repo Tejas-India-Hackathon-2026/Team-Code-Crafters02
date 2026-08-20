@@ -160,140 +160,142 @@ export default function Navbar() {
     ];
 
     return (
-        <nav className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-[#E8E2D9]">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <div className="flex items-center justify-between h-14">
-                    {/* Brand / Home Button */}
-                    <button
-                        onClick={() => router.push(profile?.is_vendor ? '/artisan' : '/')}
-                        className="flex items-center gap-2 shrink-0 cursor-pointer group"
-                    >
-                        <div className="w-8 h-8 rounded-lg bg-[#C85A32] flex items-center justify-center shadow-sm group-hover:bg-[#B04B26] transition-colors">
-                            <Home className="w-4 h-4 text-white" />
-                        </div>
-                        <span className="font-display font-bold text-[#1E1B18] text-sm">
-                            Home
-                        </span>
-                    </button>
-
-                    {/* Desktop Nav Links */}
-                    <div className="hidden md:flex items-center gap-1">
-                        {allLinks.map((link) => (
-                            <button
-                                key={link.href}
-                                onClick={() => router.push(link.href)}
-                                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all cursor-pointer ${isActive(link.href)}`}
-                            >
-                                <link.icon className="w-3.5 h-3.5" />
-                                {link.label}
-                            </button>
-                        ))}
+        <header className="sticky top-3 z-50 px-4 sm:px-6 max-w-6xl mx-auto w-full transition-all">
+            <nav className="bg-white/85 border border-stone-200/90 rounded-full px-3.5 sm:px-4 py-1.5 shadow-xs hover:shadow-md transition-all backdrop-blur-2xl flex items-center justify-between gap-2">
+                {/* Brand / Home Pill */}
+                <button
+                    onClick={() => router.push(profile?.is_vendor ? '/artisan' : '/')}
+                    className="flex items-center gap-2 shrink-0 cursor-pointer group rounded-full py-1 pr-2.5 pl-1 hover:bg-stone-100/80 transition-all"
+                >
+                    <div className="w-7 h-7 rounded-full bg-[#C85A32] flex items-center justify-center shadow-2xs group-hover:bg-[#B04B26] transition-colors text-white">
+                        <Home className="w-3.5 h-3.5" />
                     </div>
+                    <span className="font-display font-bold text-stone-900 text-sm tracking-tight">
+                        Karigar<span className="text-[#C85A32]">Kart</span>
+                    </span>
+                </button>
 
-                    {/* Right Section: Role Switcher, Profile Badge, Avatar & Sign Out */}
-                    <div className="flex items-center gap-3">
-                        {loading ? (
-                            <div className="w-8 h-8 rounded-full bg-[#F3EFEA] animate-pulse" />
-                        ) : profile ? (
-                            <div className="flex items-center gap-2.5">
-                                {/* Role Switcher Button */}
-                                <button
-                                    onClick={handleToggleRole}
-                                    disabled={switchingRole}
-                                    title={profile.is_vendor ? 'Switch to Buyer Mode' : 'Switch to Artisan Maker Mode'}
-                                    className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border transition-all cursor-pointer ${
-                                        profile.is_vendor
-                                            ? 'bg-[#EDF7ED] border-[#2C4A3E]/30 text-[#2C4A3E] hover:bg-[#E0F2E9]'
-                                            : 'bg-[#FFF4E5] border-[#ED6C02]/30 text-[#ED6C02] hover:bg-[#FFE8CC]'
-                                    }`}
-                                >
-                                    <ArrowLeftRight className={`w-3 h-3 ${switchingRole ? 'animate-spin' : ''}`} />
-                                    <span>
-                                        {switchingRole
-                                            ? 'Switching...'
-                                            : profile.is_vendor
-                                                ? 'Artisan Mode'
-                                                : 'Switch to Artisan'}
-                                    </span>
-                                </button>
-
-                                {/* Verification Status Badge */}
-                                {profile.is_vendor && (
-                                    <span
-                                        className="hidden lg:inline-flex text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-[#2E7D32] text-white items-center gap-1 shadow-sm"
-                                    >
-                                        <ShieldCheck className="w-3 h-3" />
-                                        <span>✓ Verified Artisan</span>
-                                    </span>
-                                )}
-
-                                {/* User Avatar & Profile Link */}
-                                <button
-                                    onClick={() => router.push('/profile')}
-                                    className="flex items-center gap-2 hover:opacity-85 transition-opacity cursor-pointer p-0.5 rounded-full hover:ring-2 hover:ring-[#C85A32]/20"
-                                    title="View & Edit Profile"
-                                >
-                                    <div
-                                        className="w-8 h-8 rounded-full bg-[#C85A32] flex items-center justify-center text-white text-xs font-bold overflow-hidden border border-[#E8E2D9] shadow-sm"
-                                    >
-                                        {profile.avatar_url && profile.avatar_url.startsWith('http') ? (
-                                            <img
-                                                src={profile.avatar_url}
-                                                alt={profile.full_name || 'Avatar'}
-                                                className="w-full h-full object-cover"
-                                            />
-                                        ) : (
-                                            profile.full_name?.charAt(0)?.toUpperCase() || <User className="w-4 h-4" />
-                                        )}
-                                    </div>
-                                    <span className="hidden md:block text-xs font-semibold text-[#1E1B18] max-w-[90px] truncate text-left">
-                                        {profile.full_name || 'Profile'}
-                                    </span>
-                                </button>
-
-                                {/* Sign Out */}
-                                <button
-                                    onClick={handleSignOut}
-                                    className="hidden sm:flex items-center gap-1 text-xs text-[#6B635B] hover:text-[#D32F2F] transition-colors p-1 cursor-pointer"
-                                    title="Sign Out"
-                                >
-                                    <LogOut className="w-3.5 h-3.5" />
-                                </button>
-                            </div>
-                        ) : (
-                            <button
-                                onClick={() => router.push('/login')}
-                                className="btn-primary text-xs py-1.5 px-3.5 cursor-pointer"
-                            >
-                                Sign In
-                            </button>
-                        )}
-
-                        {/* Mobile Hamburger */}
+                {/* Desktop Nav Links */}
+                <div className="hidden md:flex items-center gap-1 bg-stone-50/80 p-0.5 rounded-full border border-stone-200/60">
+                    {allLinks.map((link) => (
                         <button
-                            onClick={() => setMobileOpen(!mobileOpen)}
-                            className="md:hidden p-1.5 rounded-lg hover:bg-[#F3EFEA] transition-colors"
+                            key={link.href}
+                            onClick={() => router.push(link.href)}
+                            className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                                pathname === link.href
+                                    ? 'text-[#C85A32] font-semibold bg-white shadow-2xs'
+                                    : 'text-stone-600 hover:text-stone-950 hover:bg-white/60'
+                            }`}
                         >
-                            {mobileOpen
-                                ? <X className="w-5 h-5 text-[#1E1B18]" />
-                                : <Menu className="w-5 h-5 text-[#1E1B18]" />}
+                            <link.icon className="w-3.5 h-3.5" />
+                            <span>{link.label}</span>
                         </button>
-                    </div>
+                    ))}
                 </div>
-            </div>
+
+                {/* Right Section: Role Switcher, Profile Badge, Avatar & Sign Out */}
+                <div className="flex items-center gap-2">
+                    {loading ? (
+                        <div className="w-7 h-7 rounded-full bg-stone-200/60 animate-pulse" />
+                    ) : profile ? (
+                        <div className="flex items-center gap-2">
+                            {/* Role Switcher Button */}
+                            <button
+                                onClick={handleToggleRole}
+                                disabled={switchingRole}
+                                title={profile.is_vendor ? 'Switch to Buyer Mode' : 'Switch to Artisan Maker Mode'}
+                                className={`hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold px-3 py-1 rounded-full border transition-all cursor-pointer shadow-2xs ${
+                                    profile.is_vendor
+                                        ? 'bg-[#EDF7ED]/90 border-[#2E7D32]/25 text-[#2E7D32] hover:bg-[#EDF7ED]'
+                                        : 'bg-[#FFF4E5]/90 border-[#ED6C02]/25 text-[#ED6C02] hover:bg-[#FFF4E5]'
+                                }`}
+                            >
+                                <ArrowLeftRight className={`w-3 h-3 ${switchingRole ? 'animate-spin' : ''}`} />
+                                <span>
+                                    {switchingRole
+                                        ? 'Switching...'
+                                        : profile.is_vendor
+                                            ? 'Artisan Mode'
+                                            : 'Switch to Artisan'}
+                                </span>
+                            </button>
+
+                            {/* Verification Status Badge */}
+                            {profile.is_vendor && (
+                                <span
+                                    className="hidden lg:inline-flex text-[10px] font-mono font-semibold px-2.5 py-0.5 rounded-full bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/20 items-center gap-1 shadow-2xs"
+                                >
+                                    <ShieldCheck className="w-3 h-3" />
+                                    <span>Verified</span>
+                                </span>
+                            )}
+
+                            {/* User Avatar & Profile Link */}
+                            <button
+                                onClick={() => router.push('/profile')}
+                                className="flex items-center gap-1.5 hover:opacity-90 transition-opacity cursor-pointer p-0.5 pr-2 rounded-full hover:bg-stone-100/80 border border-transparent hover:border-stone-200/80"
+                                title="View & Edit Profile"
+                            >
+                                <div
+                                    className="w-7 h-7 rounded-full bg-[#C85A32] flex items-center justify-center text-white text-xs font-bold overflow-hidden border border-stone-200 shadow-2xs"
+                                >
+                                    {profile.avatar_url && profile.avatar_url.startsWith('http') ? (
+                                        <img
+                                            src={profile.avatar_url}
+                                            alt={profile.full_name || 'Avatar'}
+                                            className="w-full h-full object-cover"
+                                        />
+                                    ) : (
+                                        profile.full_name?.charAt(0)?.toUpperCase() || <User className="w-3.5 h-3.5" />
+                                    )}
+                                </div>
+                                <span className="hidden md:block text-xs font-medium text-stone-800 max-w-[85px] truncate text-left">
+                                    {profile.full_name || 'Profile'}
+                                </span>
+                            </button>
+
+                            {/* Sign Out */}
+                            <button
+                                onClick={handleSignOut}
+                                className="hidden sm:flex items-center justify-center w-7 h-7 rounded-full text-stone-500 hover:text-[#D32F2F] hover:bg-stone-100 transition-colors cursor-pointer"
+                                title="Sign Out"
+                            >
+                                <LogOut className="w-3.5 h-3.5" />
+                            </button>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => router.push('/login')}
+                            className="btn-primary text-xs py-1 px-3.5 rounded-full cursor-pointer shadow-xs"
+                        >
+                            Sign In
+                        </button>
+                    )}
+
+                    {/* Mobile Hamburger */}
+                    <button
+                        onClick={() => setMobileOpen(!mobileOpen)}
+                        className="md:hidden p-1.5 rounded-full hover:bg-stone-100 transition-colors"
+                    >
+                        {mobileOpen
+                            ? <X className="w-4 h-4 text-stone-900" />
+                            : <Menu className="w-4 h-4 text-stone-900" />}
+                    </button>
+                </div>
+            </nav>
 
             {/* Mobile Menu */}
             {mobileOpen && (
-                <div className="md:hidden border-t border-[#E8E2D9] bg-white animate-slide-up">
+                <div className="md:hidden mt-2 border border-stone-200/90 bg-white/95 backdrop-blur-2xl rounded-2xl shadow-xl overflow-hidden animate-slide-up">
                     <div className="px-4 py-3 flex flex-col gap-1">
                         {profile ? (
-                            <div className="mb-2 pb-2 border-b border-[#E8E2D9] flex items-center justify-between">
+                            <div className="mb-2 pb-2 border-b border-stone-100 flex items-center justify-between">
                                 <button
                                     onClick={() => {
                                         router.push('/profile');
                                         setMobileOpen(false);
                                     }}
-                                    className="flex items-center gap-2 text-xs font-bold text-[#1E1B18] text-left"
+                                    className="flex items-center gap-2 text-xs font-bold text-stone-900 text-left"
                                 >
                                     <User className="w-4 h-4 text-[#C85A32]" />
                                     {profile.full_name || 'My Profile'} ({profile.is_vendor ? 'Artisan' : 'Buyer'})
@@ -316,7 +318,7 @@ export default function Navbar() {
                                     router.push(link.href);
                                     setMobileOpen(false);
                                 }}
-                                className={`flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${isActive(link.href)}`}
+                                className={`flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${isActive(link.href)}`}
                             >
                                 <link.icon className="w-4 h-4" />
                                 {link.label}
@@ -326,7 +328,7 @@ export default function Navbar() {
                         {profile && (
                             <button
                                 onClick={handleSignOut}
-                                className="flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm font-medium text-[#D32F2F] hover:bg-[#FDEDED] transition-colors mt-2 border-t border-[#E8E2D9] pt-3 cursor-pointer"
+                                className="flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm font-medium text-[#D32F2F] hover:bg-[#FDEDED] transition-colors mt-2 border-t border-stone-100 pt-3 cursor-pointer"
                             >
                                 <LogOut className="w-4 h-4" />
                                 Sign Out
@@ -335,6 +337,6 @@ export default function Navbar() {
                     </div>
                 </div>
             )}
-        </nav>
+        </header>
     );
 }
