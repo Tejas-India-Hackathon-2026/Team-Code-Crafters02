@@ -93,6 +93,7 @@ interface Project {
     budget_max: number;
     deadline: string;
     status: string;
+    image_url?: string | null;
     buyer: { full_name: string } | null;
 }
 
