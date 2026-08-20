@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { AccordionMotion } from '../../../../components/ui/accordion-motion';
+import { KintoBadge } from '../../../../components/ui/kinto-card';
 
 const ESCROW_STATES = [
     { key: 'AWAITING_PAYMENT', label: 'Awaiting Payment', icon: CreditCard },
@@ -292,14 +293,19 @@ export default function OrderTrackingPage() {
                                 </p>
                             </div>
                         </div>
-                        <span className={`text-xs font-bold px-3 py-1 rounded-full ${
-                            order.status === 'RELEASED' ? 'bg-[#EDF7ED] text-[#2E7D32]' :
-                            order.status === 'DISPUTED' ? 'bg-[#FDEDED] text-[#D32F2F]' :
-                            order.status === 'DELIVERED_PENDING_BUFFER' ? 'bg-[#FFF4E5] text-[#ED6C02]' :
-                            'bg-[#E8F0FE] text-[#1967D2]'
-                        }`}>
+                        <KintoBadge
+                            variant={
+                                order.status === 'RELEASED'
+                                    ? 'success'
+                                    : order.status === 'DISPUTED'
+                                    ? 'danger'
+                                    : order.status === 'DELIVERED_PENDING_BUFFER'
+                                    ? 'warning'
+                                    : 'info'
+                            }
+                        >
                             {order.status.replace(/_/g, ' ')}
-                        </span>
+                        </KintoBadge>
                     </div>
 
                     {/* State Machine Visualization */}

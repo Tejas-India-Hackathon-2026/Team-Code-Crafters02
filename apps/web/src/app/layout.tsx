@@ -34,7 +34,7 @@ export default function RootLayout({
 }): React.ReactNode {
     return (
         <html lang="en" suppressHydrationWarning className={`${plusJakartaSans.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-            <body id="__karigar_root" className="bg-[#FDFBF7] text-[#1E1B18] antialiased">
+            <body id="__karigar_root" className="bg-[#FAF7F2] text-stone-900 antialiased selection:bg-[#C85A32]/20 selection:text-[#C85A32]">
                 <Navbar />
                 {children}
             </body>

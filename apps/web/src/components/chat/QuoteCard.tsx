@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Receipt, ArrowRight, ShieldCheck, CheckCircle2, Truck, Clock } from 'lucide-react';
 import Link from 'next/link';
 import { AnimatedNumber } from '../ui/animated-number';
+import { KintoBadge } from '../ui/kinto-card';
 
 interface QuoteCardProps {
     isVendor?: boolean;
@@ -144,50 +145,53 @@ export default function QuoteCard({
                         </div>
                     </div>
 
-                    {/* Live Escrow Payment Status Details */}
+                    {/* Live Escrow Payment Status Details with Kinto Badges */}
                     {escrowStatus === 'RELEASED' && (
-                        <div className="bg-[#EDF7ED] border border-[#2E7D32]/30 p-3 rounded-xl flex flex-col gap-2 animate-fade-in">
+                        <div className="bg-[#EDF7ED]/80 backdrop-blur-xs border border-[#2E7D32]/30 p-3 rounded-xl flex flex-col gap-2 animate-fade-in">
                             <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-[#2E7D32] flex items-center gap-1.5">
+                                <span className="font-bold text-[#2E7D32] flex items-center gap-1.5 font-display">
                                     <CheckCircle2 className="w-4 h-4" />
                                     Escrow Payout Complete
                                 </span>
-                                <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-[#2E7D32]/20 text-[#2E7D32] font-semibold">
+                                <KintoBadge variant="success">
                                     ₹{netPayout.toLocaleString('en-IN')} Disbursed
-                                </span>
+                                </KintoBadge>
                             </div>
-                            <p className="text-[11px] text-[#6B635B]">
+                            <p className="text-[11px] text-stone-600">
                                 Net funds have been disbursed to the artisan. Please click below to finalize and close this order discussion.
                             </p>
                         </div>
                     )}
 
                     {escrowStatus === 'HELD_IN_ESCROW' && (
-                        <div className="bg-[#FAF8F5] border border-[#C85A32]/30 p-3 rounded-xl flex flex-col gap-2 animate-fade-in">
+                        <div className="bg-[#FAF8F5]/80 backdrop-blur-xs border border-[#C85A32]/30 p-3 rounded-xl flex flex-col gap-2 animate-fade-in">
                             <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-[#C85A32] flex items-center gap-1.5">
+                                <span className="font-bold text-[#C85A32] flex items-center gap-1.5 font-display">
                                     <ShieldCheck className="w-4 h-4" />
                                     Funds Protected in Escrow
                                 </span>
-                                <span className="text-[10px] font-mono bg-white px-2 py-0.5 rounded border border-[#E8E2D9] text-[#1E1B18] font-semibold">
+                                <KintoBadge variant="brand">
                                     ₹{grossAmount.toLocaleString('en-IN')} Locked
-                                </span>
+                                </KintoBadge>
                             </div>
-                            <p className="text-[11px] text-[#6B635B]">
+                            <p className="text-[11px] text-stone-600">
                                 Payment is secured in dual-rail buffer. Payout will be released after delivery inspection.
                             </p>
                         </div>
                     )}
 
                     {escrowStatus === 'DELIVERED_PENDING_BUFFER' && (
-                        <div className="bg-[#FFF4E5] border border-[#ED6C02]/30 p-3 rounded-xl flex flex-col gap-2 animate-fade-in">
+                        <div className="bg-[#FFF4E5]/80 backdrop-blur-xs border border-[#ED6C02]/30 p-3 rounded-xl flex flex-col gap-2 animate-fade-in">
                             <div className="flex items-center justify-between text-xs">
-                                <span className="font-bold text-[#ED6C02] flex items-center gap-1.5">
+                                <span className="font-bold text-[#ED6C02] flex items-center gap-1.5 font-display">
                                     <Truck className="w-4 h-4" />
                                     Courier Delivered (48h Buffer)
                                 </span>
+                                <KintoBadge variant="warning">
+                                    48h Inspection Window
+                                </KintoBadge>
                             </div>
-                            <p className="text-[11px] text-[#6B635B]">
+                            <p className="text-[11px] text-stone-600">
                                 Carrier confirmed delivery. You can inspect the item and release payout.
                             </p>
                         </div>
