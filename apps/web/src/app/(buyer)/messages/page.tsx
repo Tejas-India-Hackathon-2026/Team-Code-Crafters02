@@ -304,8 +304,9 @@ function MessagesContent() {
             localStorage.setItem(`active_discussion_${updated.artisanId}`, JSON.stringify(updated));
         }
 
+        const projectRef = updated.projectId ? ` [PROJECT_ID: ${updated.projectId}]` : '';
         sendMessage(
-            `[COMMAND: ORDER_FINALIZED] ✓ I would like to finalize and confirm my order for "${updated.productTitle}" at ₹${updated.price.toLocaleString('en-IN')}. Please generate the TDS-compliant milestone invoice.`
+            `[COMMAND: ORDER_FINALIZED] ✓ I would like to finalize and confirm my order for "${updated.productTitle}" at ₹${updated.price.toLocaleString('en-IN')}.${projectRef} Please generate the TDS-compliant milestone invoice.`
         );
     };
 
