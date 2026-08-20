@@ -14,6 +14,7 @@ export interface ProjectCardProps {
     deadline?: string;
     buyerName?: string;
     status?: string;
+    imageUrl?: string | null;
 }
 
 /** ProjectCard renders marketplace commission brief with budget and category tags. */
@@ -27,7 +28,12 @@ export function ProjectCard({
     deadline,
     buyerName = 'Artisan Buyer',
     status = 'OPEN',
+    imageUrl,
 }: ProjectCardProps): React.ReactNode {
+    const refImgMatch = description?.match(/\[REFERENCE_IMAGE:\s*(.*?)\]/);
+    const finalImageUrl = imageUrl || (refImgMatch ? refImgMatch[1] : null);
+    const cleanDescription = description?.replace(/\[REFERENCE_IMAGE:\s*(.*?)\]/, '').trim();
+
     return (
         <article
             aria-label={`Artisan Project: ${title}`}
@@ -44,12 +50,22 @@ export function ProjectCard({
                     </span>
                 </div>
 
+                {finalImageUrl && (
+                    <div className="mb-3 rounded-xl overflow-hidden border border-[#E8E2D9] bg-[#FAF8F5]">
+                        <img
+                            src={finalImageUrl}
+                            alt={`Reference sketch for ${title}`}
+                            className="w-full h-32 object-cover"
+                        />
+                    </div>
+                )}
+
                 <h3 className="font-display font-bold text-base text-[#1E1B18] mt-1 mb-2 line-clamp-1">
                     {title}
                 </h3>
 
                 <p className="text-xs text-[#6B635B] line-clamp-2 leading-relaxed mb-4">
-                    {description}
+                    {cleanDescription}
                 </p>
 
                 {deadline && (
