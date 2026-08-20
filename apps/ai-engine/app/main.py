@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 import os
+import sys
 from typing import Dict, Any
+
+# Ensure project root (apps/ai-engine) is in sys.path regardless of execution method
+CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
+PROJECT_ROOT = os.path.dirname(CURRENT_DIR)
+if PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, PROJECT_ROOT)
+
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
@@ -67,3 +75,8 @@ def trigger_verification(payload: VerifyRequest) -> Dict[str, Any]:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"Failed to queue verification task: {str(exc)}",
         )
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
