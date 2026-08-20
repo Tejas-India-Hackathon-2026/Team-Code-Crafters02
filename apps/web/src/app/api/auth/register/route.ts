@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -61,12 +63,6 @@ export async function POST(request: Request) {
                             is_vendor: isVendor !== undefined ? !!isVendor : foundUser.user_metadata?.is_vendor,
                         },
                     });
-                } else {
-                    return NextResponse.json({
-                        success: true,
-                        message: 'Account is registered. Please sign in with your credentials.',
-                        isExistingUser: true,
-                    });
                 }
             } else {
                 return NextResponse.json({
@@ -91,10 +87,41 @@ export async function POST(request: Request) {
                 }, { onConflict: 'id' });
         }
 
+        // 3. Establish session with SSR cookies
+        const cookieStore = await cookies();
+        const supabaseSSR = createServerClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+            {
+                cookies: {
+                    getAll() {
+                        return cookieStore.getAll();
+                    },
+                    setAll(cookiesToSet) {
+                        try {
+                            cookiesToSet.forEach(({ name, value, options }) =>
+                                cookieStore.set(name, value, options)
+                            );
+                        } catch {
+                            // Handled in Server Action / Route Handler
+                        }
+                    },
+                },
+            }
+        );
+
+        const { data: authData } = await supabaseSSR.auth.signInWithPassword({
+            email: cleanEmail,
+            password: password,
+        });
+
         return NextResponse.json({
             success: true,
             userId,
-            message: 'User registered and confirmed successfully.',
+            session: authData?.session || null,
+            user: authData?.user || null,
+            isVendor: !!isVendor,
+            message: 'User registered and signed in successfully.',
         });
     } catch (err: any) {
         console.error('Registration API error:', err);

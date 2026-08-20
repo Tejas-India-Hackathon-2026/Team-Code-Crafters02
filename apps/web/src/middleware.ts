@@ -30,15 +30,28 @@ export async function middleware(request: NextRequest) {
 
     const pathname = request.nextUrl.pathname;
 
-    // Protected route groups: (buyer), (vendor), (admin)
-    // These map to /messages, /orders, /projects (buyer),
-    //               /dashboard, /verification (vendor),
-    //               /triage (admin)
+    // 1. If user is already logged in and visits /login or /auth, redirect to profile or artisan
+    if ((pathname === '/login' || pathname === '/auth') && user) {
+        const nextUrl = request.nextUrl.searchParams.get('next');
+        if (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login') && !nextUrl.startsWith('/auth')) {
+            return NextResponse.redirect(new URL(nextUrl, request.url));
+        }
+
+        const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_vendor')
+            .eq('id', user.id)
+            .maybeSingle();
+
+        const dest = profile?.is_vendor ? '/artisan' : '/profile';
+        return NextResponse.redirect(new URL(dest, request.url));
+    }
+
+    // 2. Protected route groups: /profile, /messages, /orders, /dashboard, /verification, /triage
     const protectedPrefixes = [
         '/profile',
         '/messages',
         '/orders',
-        '/projects',
         '/dashboard',
         '/verification',
         '/triage',
@@ -53,15 +66,14 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    // Admin Route Protection: Block non-admin access to /triage
+    // 3. Admin Route Protection: Block non-admin access to /triage
     if (pathname.startsWith('/triage') && user) {
         const { data: profile } = await supabase
             .from('profiles')
             .select('role, is_vendor')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
-        // Check if user has admin claim or role
         if (!profile || profile.role !== 'admin') {
             return new NextResponse('HTTP 403 Forbidden: Admin claims required for triage.', { status: 403 });
         }

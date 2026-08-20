@@ -1,11 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '../../lib/supabaseClient';
 import { Mail, Lock, User, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function AuthForm() {
     const supabase = createClient();
+    const router = useRouter();
 
     const [mode, setMode] = useState<'signin' | 'register'>('signin');
     const [email, setEmail] = useState('');
@@ -16,6 +18,15 @@ export default function AuthForm() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
+
+    const navigateTo = (dest: string) => {
+        try {
+            router.refresh();
+            router.push(dest);
+        } catch {
+            window.location.replace(dest);
+        }
+    };
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -46,11 +57,8 @@ export default function AuthForm() {
                     .eq('id', data.user.id)
                     .maybeSingle();
 
-                if (prof?.is_vendor) {
-                    window.location.href = '/artisan';
-                } else {
-                    window.location.href = '/profile';
-                }
+                const dest = prof?.is_vendor ? '/artisan' : '/profile';
+                navigateTo(dest);
                 return;
             }
 
@@ -72,11 +80,8 @@ export default function AuthForm() {
                     refresh_token: loginData.session.refresh_token,
                 });
 
-                if (loginData.isVendor) {
-                    window.location.href = '/artisan';
-                } else {
-                    window.location.href = '/profile';
-                }
+                const dest = loginData.isVendor ? '/artisan' : '/profile';
+                navigateTo(dest);
                 return;
             }
 
@@ -98,7 +103,7 @@ export default function AuthForm() {
         setErrorMsg('');
         setSuccessMsg('');
 
-        const cleanEmail = email.trim();
+        const cleanEmail = email.trim().toLowerCase();
         const cleanPassword = password;
         const cleanFullName = fullName.trim();
         const isArtisan = role === 'artisan';
@@ -121,7 +126,7 @@ export default function AuthForm() {
         setLoading(true);
 
         try {
-            // 1. Register or update credentials via server API
+            // 1. Register and establish session via server API
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -141,47 +146,15 @@ export default function AuthForm() {
                 return;
             }
 
-            // 2. Sign in user immediately after registration
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-                email: cleanEmail,
-                password: cleanPassword,
-            });
-
-            if (!signInError && signInData?.user) {
-                if (isArtisan) {
-                    window.location.href = '/verification/onboarding';
-                } else {
-                    window.location.href = '/profile';
-                }
-                return;
-            }
-
-            // Fallback to server-assisted login if direct client signIn had an issue
-            const loginRes = await fetch('/api/auth/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    email: cleanEmail,
-                    password: cleanPassword,
-                }),
-            });
-            const loginData = await loginRes.json();
-
-            if (loginData.success && loginData.session) {
+            if (regData.session) {
                 await supabase.auth.setSession({
-                    access_token: loginData.session.access_token,
-                    refresh_token: loginData.session.refresh_token,
+                    access_token: regData.session.access_token,
+                    refresh_token: regData.session.refresh_token,
                 });
-                if (isArtisan) {
-                    window.location.href = '/verification/onboarding';
-                } else {
-                    window.location.href = '/profile';
-                }
-            } else {
-                setSuccessMsg('Account registered successfully! Please click Sign In with your password.');
-                setMode('signin');
-                setLoading(false);
             }
+
+            const dest = isArtisan ? '/verification/onboarding' : '/profile';
+            navigateTo(dest);
         } catch (err: any) {
             console.error('Registration Error:', err);
             setErrorMsg(err.message || 'Registration failed. Please check your details and try again.');
