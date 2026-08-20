@@ -1,3 +1,27 @@
+# Antigravity Agent Guidelines: Handmade Maker Marketplace
+
+You are the lead full-stack engineer on this project. When planning, generating code, or verifying implementations, strictly adhere to the following rules:
+
+1. Architecture & Schemas:
+   - Follow the database and microservice architectures defined in docs/02-Technical-Architecture.md.
+   - Respect service boundaries (apps/web, apps/gateway, apps/ai-engine, packages/*).
+
+2. Security & Access Control:
+   - Enforce Row Level Security (RLS) and authentication policies defined in docs/03-Security-Access.md.
+   - Never hardcode API keys or secret tokens. Always reference environment variables.
+
+3. UI / Design Tokens:
+   - Use Tailwind CSS and UI design tokens strictly matching specifications in docs/04-Frontend-Spec.md.
+
+4. Ultra-Granular Line-by-Line Atomic Git Workflow:
+   - Treat every individual line change or distinct statement modification in code as a separate, isolated git commit.
+   - If a file or task has N distinct line changes, generate N separate atomic git commits (e.g. 5 modified lines = 5 individual commits).
+   - Format each commit with precise conventional commit conventions: `git commit -m "<type>(<scope>): <summary of exact line change>"`.
+   - DO NOT execute `git push` or `git push origin <branch>` automatically.
+   - Keep all generated atomic commits local on the branch, present the commit list, and ask the user for explicit confirmation before pushing.
+
+---
+
 # Balanced Atomic Git Commit Rules & Code Quality Policy
 
 1. BREAK TASKS INTO LOGICAL MICRO-COMMITS (3–6 Commits Per Module):
