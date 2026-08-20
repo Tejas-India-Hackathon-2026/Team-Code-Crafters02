@@ -33,7 +33,7 @@ const CRAFT_CATEGORIES = [
 
 export interface ReelUploaderProps { defaultCategory?: string }
 
-export default function ReelUploader({ defaultCategory }: ReelUploaderProps): JSX.Element {
+export default function ReelUploader({ defaultCategory }: ReelUploaderProps): React.ReactNode {
     const supabase = createClient();
 
     const [user, setUser] = useState<any>(null);
