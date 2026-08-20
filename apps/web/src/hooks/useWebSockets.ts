@@ -53,17 +53,56 @@ export function useWebSockets(conversationId: string | null) {
                         merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
                         return merged;
                     });
-                } else if (!loadedFromLocal && (conversationId.includes('case') || conversationId.includes('raja') || conversationId.startsWith('conv-'))) {
-                    const initialInquiryMsg = {
-                        id: `msg-inquiry-${conversationId}`,
-                        conversation_id: conversationId,
-                        sender_id: 'buyer-rishav',
-                        sender_name: 'Rishav Kumar',
-                        content: 'Hi! I am interested in ordering this verified handcrafted product: "case" (₹300). Can you please confirm customization options and delivery schedule?',
-                        is_flagged: false,
-                        flag_reason: null,
-                        created_at: new Date().toISOString(),
-                    };
+                } else if (!loadedFromLocal && conversationId.startsWith('conv-')) {
+                    let productTitle = 'Handcrafted Item';
+                    let price = 0;
+                    let isCommission = false;
+                    let artisanName = 'Verified Artisan';
+                    let artisanId = 'artisan-maker';
+                    let proposalText = '';
+
+                    if (typeof window !== 'undefined') {
+                        try {
+                            const rawRegistry = localStorage.getItem('karigar_conversations_registry');
+                            if (rawRegistry) {
+                                const list = JSON.parse(rawRegistry);
+                                const match = Array.isArray(list)
+                                    ? list.find((c: any) => c.id === conversationId || (c.artisanId && conversationId.includes(c.artisanId)))
+                                    : null;
+                                if (match) {
+                                    productTitle = match.productTitle || productTitle;
+                                    price = match.price || price;
+                                    isCommission = match.craftCategory?.toLowerCase().includes('commission') || !!match.projectId;
+                                    artisanName = match.artisanName || artisanName;
+                                    artisanId = match.artisanId || artisanId;
+                                    proposalText = match.proposalText || '';
+                                }
+                            }
+                        } catch (e) {}
+                    }
+
+                    const initialInquiryMsg = isCommission
+                        ? {
+                              id: `msg-proposal-${conversationId}`,
+                              conversation_id: conversationId,
+                              sender_id: artisanId,
+                              sender_name: artisanName,
+                              content: `Namaste! I am interested in making and delivering your custom handcrafted order "${productTitle}" for ₹${price.toLocaleString('en-IN')}.\n\n${proposalText ? `Proposal note: "${proposalText}"\n\n` : ''}I am ready to handcraft this to your exact specifications. Let's discuss dimensions, milestones, or any questions you have!`,
+                              is_flagged: false,
+                              flag_reason: null,
+                              created_at: new Date().toISOString(),
+                          }
+                        : {
+                              id: `msg-inquiry-${conversationId}`,
+                              conversation_id: conversationId,
+                              sender_id: 'buyer-user',
+                              sender_name: 'Buyer',
+                              content: `Hi! I am interested in ordering this verified handcrafted product: "${productTitle}"${price ? ` (₹${price.toLocaleString('en-IN')})` : ''}. Can you please confirm customization options and delivery schedule?`,
+                              is_flagged: false,
+                              flag_reason: null,
+                              created_at: new Date().toISOString(),
+                          };
+
                     setMessages([initialInquiryMsg]);
                     if (typeof window !== 'undefined') {
                         try {
