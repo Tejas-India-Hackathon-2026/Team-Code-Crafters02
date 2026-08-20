@@ -27,6 +27,10 @@ interface ProjectProposalsListProps {
     isOwner?: boolean;
 }
 
+/**
+ * ProjectProposalsList renders real-time synchronized artisan proposals for custom commission
+ * briefs, with instant removal when an artisan withdraws their bid and live pricing updates.
+ */
 export function ProjectProposalsList({
     projectId,
     initialBids = [],
