@@ -119,7 +119,7 @@ export default function HomePage(): JSX.Element {
             </section>
 
             {/* How It Works */}
-            <section className="border-t border-[#E8E2D9] bg-[#FDFBF7] py-16 sm:py-20">
+            <section className="border-t border-[#E8E2D9] bg-[#FDFBF7] py-16 sm:py-20" aria-label="How Karigar Kart marketplace works">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="text-center mb-12">
                         <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-[#C85A32] uppercase tracking-widest mb-3">
