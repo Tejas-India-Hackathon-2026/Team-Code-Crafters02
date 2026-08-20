@@ -79,17 +79,37 @@ export function EscrowStatusBadge({
         icon: ShieldCheck,
     };
 
+    const sizeClasses = {
+        sm: 'px-2 py-0.5 text-[10px]',
+        md: 'px-3 py-1 text-xs',
+        lg: 'px-3.5 py-1.5 text-sm',
+    }[size];
+
     const Icon = current.icon;
 
     return (
-        <span
-            role="status"
-            aria-label={`Escrow Status: ${current.label}`}
-            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${current.bg} ${current.text} border border-current/10 ${className}`}
-        >
-            <Icon className="w-3.5 h-3.5" />
-            <span>{current.label}</span>
-        </span>
+        <div className="inline-flex items-center gap-1.5 flex-wrap">
+            <span
+                role="status"
+                aria-label={`Escrow Status: ${current.label}`}
+                className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${sizeClasses} ${current.bg} ${current.text} border border-current/15 ${className}`}
+            >
+                {current.pulse && (
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-current opacity-60"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-current"></span>
+                    </span>
+                )}
+                <Icon className={size === 'sm' ? 'w-3 h-3' : size === 'lg' ? 'w-4 h-4' : 'w-3.5 h-3.5'} />
+                <span>{current.label}</span>
+            </span>
+
+            {showRailBadge && rail && (
+                <span className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-[#FAF8F5] border border-[#E8E2D9] text-[#6B635B]">
+                    {rail === 'WEB3_ONCHAIN_USDC' ? '⚡ USDC Smart Escrow' : '🏛️ RBI Nodal Rail'}
+                </span>
+            )}
+        </div>
     );
 }
 
