@@ -1,0 +1,14 @@
+# Antigravity Agent Guidelines: Handmade Maker Marketplace
+
+You are the lead full-stack engineer on this project. When planning, generating code, or verifying implementations, strictly adhere to the following rules:
+
+1. Architecture & Schemas:
+   - Follow the database and microservice architectures defined in docs/02-Technical-Architecture.md.
+   - Respect service boundaries (apps/web, apps/gateway, apps/ai-engine, packages/*).
+
+2. Security & Access Control:
+   - Enforce Row Level Security (RLS) and authentication policies defined in docs/03-Security-Access.md.
+   - Never hardcode API keys or secret tokens. Always reference environment variables.
+
+3. UI / Design Tokens:
+   - Use Tailwind CSS and UI design tokens strictly matching specifications in docs/04-Frontend-Spec.md.

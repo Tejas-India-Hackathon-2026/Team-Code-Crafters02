@@ -1,0 +1,11 @@
+{
+    "name": "karigar-kart-monorepo",
+    "version": "1.0.0",
+    "private": true,
+    "scripts": {
+        "dev": "npm --prefix apps/web run dev",
+        "dev:web": "npm --prefix apps/web run dev",
+        "dev:gateway": "npm --prefix apps/gateway run dev",
+        "build:web": "npm --prefix apps/web run build"
+    }
+}
