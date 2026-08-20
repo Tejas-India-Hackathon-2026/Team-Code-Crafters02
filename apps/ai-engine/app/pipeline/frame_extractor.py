@@ -1,7 +1,10 @@
+from __future__ import annotations
+
 import subprocess
 import os
+from typing import List
 
-def extract_keyframes(video_path: str, output_dir: str) -> list[str]:
+def extract_keyframes(video_path: str, output_dir: str) -> List[str]:
     """Extracts 3-5 representative keyframes from video using FFmpeg"""
     os.makedirs(output_dir, exist_ok=True)
     output_pattern = os.path.join(output_dir, "frame_%02d.jpg")

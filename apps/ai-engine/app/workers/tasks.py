@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import os
 import tempfile
 import urllib.request
+from typing import Dict, Any, Optional
 from celery import Celery
 from supabase import create_client, Client
 from app.pipeline.frame_extractor import extract_keyframes
@@ -18,16 +21,16 @@ supabase: Client = create_client(
 )
 
 @celery_app.task(bind=True, max_retries=3)
-def process_verification_reel(self, reel_id: str):
+def process_verification_reel(self: Any, reel_id: str) -> Dict[str, Any]:
     try:
         # 1. Fetch reel details
-        reel = supabase.table("verification_reels").select("*").eq("id", reel_id).single().execute().data
+        reel_res = supabase.table("verification_reels").select("*").eq("id", reel_id).single().execute()
+        reel = reel_res.data if reel_res else None
         if not reel:
             return {"error": "Reel not found"}
 
         # 2. Fetch vendor profile to retrieve registered brand logo
-        vendor = None
-        logo_url = None
+        logo_url: Optional[str] = None
         if reel.get("vendor_id"):
             vendor_res = supabase.table("profiles").select("avatar_url, full_name").eq("id", reel["vendor_id"]).single().execute()
             vendor = vendor_res.data if vendor_res else None
@@ -77,7 +80,7 @@ def process_verification_reel(self, reel_id: str):
             }).eq("id", reel_id).execute()
 
             # 8. If auto-verified (≥90%), mark maker profile as verified
-            if status == "VERIFIED":
+            if status == "VERIFIED" and reel.get("vendor_id"):
                 supabase.table("profiles").update({
                     "vendor_verified": True,
                     "kyc_status": "PASSED"
