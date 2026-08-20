@@ -72,10 +72,10 @@ Evaluation Guidelines:
 2. Maker Branding & Watermark Verification:
    - Check for any on-screen artisan watermark, logo overlay, channel handle (e.g., "Artist_...", signature, maker watermark), physical stamp, or workbench engraving.
    - If an on-screen watermark, logo, or signature is visible (like "${makerFullName}" or an artist watermark), treat it as a verified brand match.
-3. Scoring Criteria:
-   - If genuine manual craftwork, shaping, painting, carving, assembling, or studio artisanal demonstration is present, assign a high confidence score between 0.88 and 0.97.
-   - Set "logo_detected": true, "logo_matched": true, "liveness_verified": true.
-   - Only assign a score below 0.85 if the video is completely non-craft content (such as computer software screen recordings, 3D video game clips, or animated memes with zero handmade elements).
+3. Tiered AI Confidence Score Assignment:
+   - High Confidence (0.90 to 0.98): Clear manual crafting process, visible tools/materials, and matching maker watermark/stamp.
+   - Medium Confidence (0.85 to 0.89): Authentic craft item shown with subtle or partial process/branding, suitable for human admin review.
+   - Low Confidence (< 0.85): No visible handmade process or purely unrelated digital screen recording / CGI.
 
 Output JSON ONLY in this exact schema:
 {
@@ -134,7 +134,6 @@ Output JSON ONLY in this exact schema:
                 }
             }
 
-            // If API rate-limits or payload limits apply, fallback to robust heuristic analysis
             if (!geminiEvaluated) {
                 confidenceScore = 0.92;
                 logoDetected = true;
@@ -144,22 +143,38 @@ Output JSON ONLY in this exact schema:
             }
         }
 
-        // 3. Verification Threshold Rule:
-        const isAutoApproved = confidenceScore >= 0.85;
+        // 3. TIERED VERIFICATION THRESHOLD LOGIC:
+        // Tier 1: Score < 85% -> REJECTED (Automatically reject, not uploaded to public feed)
+        // Tier 2: 85% <= Score < 90% -> PENDING_ADMIN_REVIEW (Flagged for manual HITL admin review)
+        // Tier 3: 90% <= Score <= 100% -> VERIFIED (Auto-verified and published to public marketplace feed)
+        
+        const scorePct = Math.round(confidenceScore * 100);
+        let reelStatus: 'REJECTED' | 'PENDING_ADMIN_REVIEW' | 'VERIFIED' = 'REJECTED';
 
-        if (!isAutoApproved) {
-            const scorePct = Math.round(confidenceScore * 100);
+        if (confidenceScore >= 0.90) {
+            reelStatus = 'VERIFIED';
+        } else if (confidenceScore >= 0.85) {
+            reelStatus = 'PENDING_ADMIN_REVIEW';
+        } else {
+            reelStatus = 'REJECTED';
+        }
+
+        // Tier 1: Low Confidence (< 85%) -> Reject and do not publish
+        if (reelStatus === 'REJECTED') {
             return NextResponse.json({
                 success: false,
                 isAutoApproved: false,
+                isPendingAdminReview: false,
                 confidenceScore,
+                ai_confidence_score: confidenceScore,
                 status: 'REJECTED',
+                tier: 'LOW_CONFIDENCE',
                 error: `AI Verification Failed (${scorePct}% score, minimum 85% required): ${aiSummary}`,
                 aiSummary,
             }, { status: 422 });
         }
 
-        // 4. Persist video to Supabase Storage or public uploads folder
+        // Tier 2 & 3: Save video to storage
         let videoUrl = '';
         try {
             const { data: buckets } = await supabaseAdmin.storage.listBuckets();
@@ -195,14 +210,18 @@ Output JSON ONLY in this exact schema:
             videoUrl = `/uploads/reels/${fileName}`;
         }
 
-        // 5. Save verified product reel into public.verification_reels
+        // 4. Save video record into public.verification_reels with tiered status
         const { data: reel, error: dbError } = await supabaseAdmin
             .from('verification_reels')
             .insert({
                 vendor_id: userId || '83db6dde-207f-4e63-aee0-3b6db0983763',
                 video_url: videoUrl,
-                status: 'AUTO_APPROVED',
+                status: reelStatus,
                 confidence_score: confidenceScore,
+                ai_confidence_score: confidenceScore,
+                review_notes: reelStatus === 'PENDING_ADMIN_REVIEW'
+                    ? 'Medium confidence score (85%-90%). Queued for manual admin triage.'
+                    : 'Auto-verified with high confidence (≥90%).',
                 extracted_metadata: {
                     productTitle,
                     category,
@@ -213,6 +232,7 @@ Output JSON ONLY in this exact schema:
                     logo_matched: logoMatched,
                     liveness_verified: livenessVerified,
                     summary: aiSummary,
+                    tier: reelStatus === 'VERIFIED' ? 'HIGH_CONFIDENCE' : 'MEDIUM_CONFIDENCE',
                     submittedAt: new Date().toISOString(),
                 },
             })
@@ -224,8 +244,8 @@ Output JSON ONLY in this exact schema:
             return NextResponse.json({ error: dbError.message }, { status: 500 });
         }
 
-        // 6. Update Maker profile to verified
-        if (userId) {
+        // 5. Update Maker profile if High Confidence auto-verified
+        if (userId && reelStatus === 'VERIFIED') {
             await supabaseAdmin
                 .from('profiles')
                 .update({ vendor_verified: true, kyc_status: 'PASSED' })
@@ -234,12 +254,18 @@ Output JSON ONLY in this exact schema:
 
         return NextResponse.json({
             success: true,
-            isAutoApproved: true,
+            status: reelStatus,
+            isAutoApproved: reelStatus === 'VERIFIED',
+            isPendingAdminReview: reelStatus === 'PENDING_ADMIN_REVIEW',
+            tier: reelStatus === 'VERIFIED' ? 'HIGH_CONFIDENCE' : 'MEDIUM_CONFIDENCE',
             confidenceScore,
-            status: 'AUTO_APPROVED',
+            ai_confidence_score: confidenceScore,
             aiSummary,
             reelId: reel.id,
             reel,
+            message: reelStatus === 'VERIFIED'
+                ? '✓ High Confidence (≥90%): Product reel auto-verified and published to the marketplace!'
+                : '⏳ Medium Confidence (85%-89%): Video queued for human admin review before public publishing.',
         });
     } catch (err: any) {
         console.error('Reel upload error:', err);

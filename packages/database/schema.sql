@@ -67,9 +67,16 @@ CREATE OR REPLACE TRIGGER on_auth_user_created
 
 
 
--- 1. Create Reel Status ENUM
+-- 1. Create Reel Status ENUM (with Tiered Verification Support)
 DO $$ BEGIN
-    CREATE TYPE reel_status_enum AS ENUM ('PENDING', 'AUTO_APPROVED', 'REJECTED', 'NEEDS_REVIEW');
+    CREATE TYPE reel_status_enum AS ENUM (
+      'REJECTED', 
+      'PENDING_ADMIN_REVIEW', 
+      'VERIFIED', 
+      'PENDING', 
+      'AUTO_APPROVED', 
+      'NEEDS_REVIEW'
+    );
 EXCEPTION
     WHEN duplicate_object THEN null;
 END $$;
@@ -82,7 +89,11 @@ CREATE TABLE IF NOT EXISTS public.verification_reels (
   stream_media_id TEXT,
   status reel_status_enum DEFAULT 'PENDING',
   confidence_score NUMERIC(5,4),
+  ai_confidence_score NUMERIC(5,4),
   extracted_metadata JSONB DEFAULT '{}'::jsonb,
+  review_notes TEXT,
+  reviewed_by UUID REFERENCES public.profiles(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -90,9 +101,21 @@ CREATE TABLE IF NOT EXISTS public.verification_reels (
 ALTER TABLE public.verification_reels ENABLE ROW LEVEL SECURITY;
 
 -- 4. RLS Policies for Reels
-CREATE POLICY "Approved reels are viewable by everyone" ON public.verification_reels FOR SELECT USING (status = 'AUTO_APPROVED');
-CREATE POLICY "Vendors can view own uploaded reels" ON public.verification_reels FOR SELECT USING (auth.uid() = vendor_id);
-CREATE POLICY "Makers can upload own reels" ON public.verification_reels FOR INSERT WITH CHECK (auth.uid() = vendor_id);
+CREATE POLICY "Verified and approved reels are viewable by everyone" 
+  ON public.verification_reels FOR SELECT 
+  USING (status IN ('VERIFIED', 'AUTO_APPROVED'));
+
+CREATE POLICY "Vendors can view own uploaded reels" 
+  ON public.verification_reels FOR SELECT 
+  USING (auth.uid() = vendor_id);
+
+CREATE POLICY "Makers can upload own reels" 
+  ON public.verification_reels FOR INSERT 
+  WITH CHECK (auth.uid() = vendor_id);
+
+CREATE POLICY "Admins can view and review all reels" 
+  ON public.verification_reels FOR ALL 
+  USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role = 'admin' OR is_vendor = false)));
 
 
 -- 1. Create Enums for Projects and Bids

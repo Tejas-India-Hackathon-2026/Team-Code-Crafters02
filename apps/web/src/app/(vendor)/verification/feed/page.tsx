@@ -239,7 +239,7 @@ export default function ReelFeedPage() {
             const { data } = await supabase
                 .from('verification_reels')
                 .select('*, vendor:profiles(full_name, avatar_url, vendor_verified)')
-                .in('status', ['AUTO_APPROVED', 'NEEDS_REVIEW', 'PENDING'])
+                .in('status', ['VERIFIED', 'AUTO_APPROVED'])
                 .order('created_at', { ascending: false })
                 .limit(50);
 

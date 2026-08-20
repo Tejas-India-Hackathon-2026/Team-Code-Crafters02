@@ -37,7 +37,7 @@ def process_verification_reel(self, reel_id: str):
             video_path = os.path.join(tmp_dir, "input_reel.mp4")
             frames_dir = os.path.join(tmp_dir, "frames")
 
-            # 3. Download video from S3 URL
+            # 3. Download video from S3 / CDN URL
             urllib.request.urlretrieve(reel["video_url"], video_path)
 
             # 4. Extract Keyframes
@@ -47,25 +47,48 @@ def process_verification_reel(self, reel_id: str):
             analysis = evaluate_craft_frames(frames, logo_url=logo_url)
             confidence = float(analysis.get("confidence_score", 0.0))
 
-            # 6. Routing logic (>= 0.85 -> AUTO_APPROVED, else NEEDS_REVIEW)
-            status = "AUTO_APPROVED" if confidence >= 0.85 else "NEEDS_REVIEW"
+            # 6. Tiered verification threshold logic:
+            # - Score < 85%: REJECTED
+            # - 85% <= Score < 90%: PENDING_ADMIN_REVIEW
+            # - 90% <= Score <= 100%: VERIFIED
+            if confidence >= 0.90:
+                status = "VERIFIED"
+                tier = "HIGH_CONFIDENCE"
+                notes = "Auto-verified with high confidence (≥90%)."
+            elif confidence >= 0.85:
+                status = "PENDING_ADMIN_REVIEW"
+                tier = "MEDIUM_CONFIDENCE"
+                notes = "Medium confidence score (85%-90%). Queued for manual admin triage."
+            else:
+                status = "REJECTED"
+                tier = "LOW_CONFIDENCE"
+                notes = f"AI verification failed (score: {confidence:.2f}, below 85% threshold)."
 
-            # 7. Update database record
+            # 7. Update database record with tiered fields
             supabase.table("verification_reels").update({
                 "status": status,
                 "confidence_score": confidence,
-                "extracted_metadata": analysis
+                "ai_confidence_score": confidence,
+                "review_notes": notes,
+                "extracted_metadata": {
+                    **analysis,
+                    "tier": tier
+                }
             }).eq("id", reel_id).execute()
 
-            # 8. If auto-approved, mark maker profile as verified
-            if status == "AUTO_APPROVED":
+            # 8. If auto-verified (≥90%), mark maker profile as verified
+            if status == "VERIFIED":
                 supabase.table("profiles").update({
-                    "vendor_verified": True
+                    "vendor_verified": True,
+                    "kyc_status": "PASSED"
                 }).eq("id", reel["vendor_id"]).execute()
 
-            return {"status": status, "confidence": confidence}
+            return {"status": status, "confidence": confidence, "tier": tier}
 
     except Exception as exc:
         if self.request.retries >= self.max_retries:
-            supabase.table("verification_reels").update({"status": "NEEDS_REVIEW"}).eq("id", reel_id).execute()
+            supabase.table("verification_reels").update({
+                "status": "PENDING_ADMIN_REVIEW",
+                "review_notes": f"Processing exception: {str(exc)}"
+            }).eq("id", reel_id).execute()
         raise self.retry(exc=exc, countdown=10)

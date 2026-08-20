@@ -9,10 +9,10 @@ import {
     Package,
     Tag,
     DollarSign,
-    FileText,
     Sparkles,
-    Check,
     ArrowRight,
+    Clock,
+    LayoutDashboard,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -43,7 +43,7 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
     const [progress, setProgress] = useState<number>(0);
     const [uploading, setUploading] = useState<boolean>(false);
     const [statusMessage, setStatusMessage] = useState<string>('');
-    const [successReel, setSuccessReel] = useState<any | null>(null);
+    const [resultData, setResultData] = useState<any | null>(null);
 
     useEffect(() => {
         supabase.auth.getUser().then(({ data }) => {
@@ -113,12 +113,16 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
                 xhr.send(formData);
             });
 
-            if (!uploadResult.success) {
+            if (!uploadResult.success && uploadResult.status !== 'PENDING_ADMIN_REVIEW') {
                 throw new Error(uploadResult.error || 'Upload failed.');
             }
 
-            setSuccessReel(uploadResult.reel || { productTitle, category, price });
-            setStatusMessage('✓ Reel published & verified successfully!');
+            setResultData(uploadResult);
+            setStatusMessage(
+                uploadResult.status === 'VERIFIED'
+                    ? '✓ Reel verified & published live!'
+                    : '⏳ Reel queued for admin review (85%-90% confidence).'
+            );
         } catch (err: any) {
             console.error('Upload Error:', err);
             setStatusMessage(`Error: ${err.message}`);
@@ -127,44 +131,87 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
         }
     };
 
-    if (successReel) {
-        const score = successReel.confidence_score ? Math.round(successReel.confidence_score * 100) : 10;
-        const isAutoApproved = successReel.status === 'AUTO_APPROVED' && score >= 85;
-        const summary = successReel.extracted_metadata?.summary || 'AI evaluated the video content.';
+    if (resultData) {
+        const score = resultData.confidenceScore ? Math.round(resultData.confidenceScore * 100) : 90;
+        const isVerified = resultData.status === 'VERIFIED' || resultData.isAutoApproved;
+        const isPendingReview = resultData.status === 'PENDING_ADMIN_REVIEW' || resultData.isPendingAdminReview;
+        const summary = resultData.aiSummary || 'AI evaluated the craftsmanship and branding.';
 
         return (
             <div className="card p-8 bg-white text-center w-full max-w-lg animate-slide-up shadow-card border border-[#E8E2D9]">
-                <div className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
-                    isAutoApproved ? 'bg-[#EDF7ED] text-[#2E7D32]' : 'bg-[#FDEDED] text-[#D32F2F]'
-                }`}>
-                    {isAutoApproved ? <CheckCircle2 className="w-8 h-8" /> : <AlertCircle className="w-8 h-8" />}
+                {/* Status Icon */}
+                <div
+                    className={`w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 ${
+                        isVerified
+                            ? 'bg-[#EDF7ED] text-[#2E7D32]'
+                            : isPendingReview
+                            ? 'bg-[#FFF4E5] text-[#ED6C02]'
+                            : 'bg-[#FDEDED] text-[#D32F2F]'
+                    }`}
+                >
+                    {isVerified ? (
+                        <CheckCircle2 className="w-8 h-8" />
+                    ) : isPendingReview ? (
+                        <Clock className="w-8 h-8" />
+                    ) : (
+                        <AlertCircle className="w-8 h-8" />
+                    )}
                 </div>
 
-                <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold mb-3 ${
-                    isAutoApproved ? 'bg-[#EDF7ED] text-[#2E7D32]' : 'bg-[#FDEDED] text-[#D32F2F]'
-                }`}>
+                {/* Score & Tier Badge */}
+                <div
+                    className={`inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full text-xs font-bold mb-3 ${
+                        isVerified
+                            ? 'bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/20'
+                            : isPendingReview
+                            ? 'bg-[#FFF4E5] text-[#ED6C02] border border-[#ED6C02]/20'
+                            : 'bg-[#FDEDED] text-[#D32F2F] border border-[#D32F2F]/20'
+                    }`}
+                >
                     <Sparkles className="w-3.5 h-3.5" />
-                    <span>{isAutoApproved ? `✓ ${score}% AI Verified (≥85% Threshold Met)` : `❌ ${score}% AI Score (Below 85% Threshold)`}</span>
+                    <span>
+                        {isVerified
+                            ? `✓ ${score}% AI Confidence (Auto-Verified)`
+                            : isPendingReview
+                            ? `⏳ ${score}% AI Score (85%–90% HITL Review Queue)`
+                            : `❌ ${score}% AI Score (Below 85% Threshold)`}
+                    </span>
                 </div>
 
+                {/* Heading */}
                 <h2 className="text-xl font-bold text-[#1E1B18] font-display mb-2">
-                    {isAutoApproved ? 'Product Reel Published & Verified!' : 'AI Verification Rejected'}
+                    {isVerified
+                        ? 'Product Reel Published & Verified!'
+                        : isPendingReview
+                        ? 'Video in Admin Review Queue'
+                        : 'AI Verification Rejected'}
                 </h2>
+
+                {/* Description */}
                 <p className="text-xs text-[#6B635B] mb-6 leading-relaxed">
-                    {isAutoApproved ? (
+                    {isVerified ? (
                         <>
-                            Gemini 3.6 Flash inspected your video and authenticated physical workshop craftsmanship and maker branding. Assigned batch watermark <span className="font-mono font-bold text-[#C85A32]">{successReel.extracted_metadata?.batch_marking || '#01/50'}</span>.
+                            Gemini Multimodal Vision authenticated your craftsmanship and maker branding. Assigned batch watermark{' '}
+                            <span className="font-mono font-bold text-[#C85A32]">
+                                {resultData.reel?.extracted_metadata?.batch_marking || '#01/50'}
+                            </span>
+                            . Your reel is now live on the marketplace feed!
+                        </>
+                    ) : isPendingReview ? (
+                        <>
+                            Your video scored in the medium confidence band (85%–89.9%). It has been safely uploaded and submitted to our human triage team for rapid review. You will be notified once approved.
                         </>
                     ) : (
                         <>
                             <strong className="text-[#D32F2F] block mb-1">Reason: {summary}</strong>
-                            To protect marketplace authenticity, all videos must genuinely showcase the physical workshop craft process (chiseling, pottery wheel, weaving, hammering) matching your registered brand logo.
+                            To protect marketplace authenticity, all videos must genuinely showcase the physical workshop craft process matching your registered brand logo.
                         </>
                     )}
                 </p>
 
+                {/* Actions */}
                 <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                    {isAutoApproved ? (
+                    {isVerified && (
                         <Link
                             href="/verification/feed"
                             className="btn-primary text-xs py-2.5 px-5 flex items-center justify-center gap-1.5 font-semibold"
@@ -172,40 +219,31 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
                             <span>View in Marketplace Feed</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
-                    ) : (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setSuccessReel(null);
-                                setFile(null);
-                                setProductTitle('');
-                                setPrice('');
-                                setDescription('');
-                                setProgress(0);
-                                setStatusMessage('');
-                            }}
-                            className="btn-primary text-xs py-2.5 px-5 font-semibold"
-                        >
-                            Try Again with Authentic Workshop Video
-                        </button>
                     )}
-                    {isAutoApproved && (
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setSuccessReel(null);
-                                setFile(null);
-                                setProductTitle('');
-                                setPrice('');
-                                setDescription('');
-                                setProgress(0);
-                                setStatusMessage('');
-                            }}
-                            className="btn-ghost text-xs py-2.5 px-5"
+                    {isPendingReview && (
+                        <Link
+                            href="/dashboard"
+                            className="btn-primary text-xs py-2.5 px-5 flex items-center justify-center gap-1.5 font-semibold"
                         >
-                            Upload Another Product
-                        </button>
+                            <LayoutDashboard className="w-3.5 h-3.5" />
+                            <span>Go to Maker Dashboard</span>
+                        </Link>
                     )}
+                    <button
+                        type="button"
+                        onClick={() => {
+                            setResultData(null);
+                            setFile(null);
+                            setProductTitle('');
+                            setPrice('');
+                            setDescription('');
+                            setProgress(0);
+                            setStatusMessage('');
+                        }}
+                        className="btn-ghost text-xs py-2.5 px-5"
+                    >
+                        {isVerified || isPendingReview ? 'Upload Another Product' : 'Try Again'}
+                    </button>
                 </div>
             </div>
         );
@@ -213,9 +251,26 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
 
     return (
         <form onSubmit={handleUpload} className="card p-6 bg-white w-full max-w-lg shadow-card border border-[#E8E2D9] flex flex-col gap-4">
-            <h2 className="text-sm font-bold text-[#1E1B18] font-display uppercase tracking-wider">
-                Product Details & Process Reel
-            </h2>
+            <div className="flex items-center justify-between">
+                <h2 className="text-sm font-bold text-[#1E1B18] font-display uppercase tracking-wider">
+                    Product Details & Process Reel
+                </h2>
+                <span className="text-[10px] bg-[#FAF8F5] border border-[#E8E2D9] text-[#6B635B] px-2 py-0.5 rounded-full font-mono">
+                    Tiered AI Inspection
+                </span>
+            </div>
+
+            {/* Tier Guidelines Helper Box */}
+            <div className="bg-[#FAF8F5] border border-[#E8E2D9] rounded-xl p-3 text-[11px] text-[#6B635B] flex flex-col gap-1">
+                <div className="flex items-center justify-between text-[#1E1B18] font-semibold">
+                    <span>AI Confidence Tier Rules:</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 mt-1 text-[10px] text-center font-medium">
+                    <span className="bg-[#FDEDED] text-[#D32F2F] p-1 rounded">{'< 85%: Reject'}</span>
+                    <span className="bg-[#FFF4E5] text-[#ED6C02] p-1 rounded">{'85-89%: HITL Review'}</span>
+                    <span className="bg-[#EDF7ED] text-[#2E7D32] p-1 rounded">{'≥ 90%: Auto-Verify'}</span>
+                </div>
+            </div>
 
             {/* 1. Product Title */}
             <div>
@@ -302,7 +357,7 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
                         {file ? file.name : 'Select 9:16 Vertical Video (30–60s)'}
                     </p>
                     <p className="text-[10px] text-[#6B635B] mt-0.5">
-                        MP4 / MOV up to 100 MB. Ensure physical stamp/logo is clearly visible.
+                        MP4 / MOV up to 100 MB. Ensure physical stamp/logo or on-screen watermark is visible.
                     </p>
                     <label className="btn-ghost text-xs py-1.5 px-4 mt-3 cursor-pointer">
                         {file ? 'Change Video' : 'Choose Video File'}
@@ -327,7 +382,7 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
                         />
                     </div>
                     <div className="flex justify-between items-center text-[10px] text-[#6B635B] mt-1">
-                        <span>{progress < 100 ? 'Uploading video...' : 'AI verifying logo & stamps...'}</span>
+                        <span>{progress < 100 ? 'Uploading video...' : 'Gemini AI calculating tiered confidence...'}</span>
                         <span>{progress}%</span>
                     </div>
                 </div>
@@ -350,7 +405,7 @@ export default function ReelUploader({ defaultCategory }: { defaultCategory?: st
                 disabled={!file || uploading}
                 className="btn-primary w-full py-3 mt-1 font-semibold text-sm cursor-pointer disabled:opacity-50"
             >
-                {uploading ? 'Uploading & Verifying...' : 'Upload & Verify Product Reel'}
+                {uploading ? 'Analyzing Craftsmanship...' : 'Upload & Verify Product Reel'}
             </button>
         </form>
     );
