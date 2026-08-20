@@ -252,7 +252,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): JS
     }
 
     return (
-        <form onSubmit={handleUpload} className="card p-6 bg-white w-full max-w-lg shadow-card border border-[#E8E2D9] flex flex-col gap-4">
+        <form onSubmit={handleUpload} aria-label="Artisan product details and reel upload form" className="card p-6 bg-white w-full max-w-lg shadow-card border border-[#E8E2D9] flex flex-col gap-4">
             <div className="flex items-center justify-between">
                 <h2 className="text-sm font-bold text-[#1E1B18] font-display uppercase tracking-wider">
                     Product Details & Process Reel
