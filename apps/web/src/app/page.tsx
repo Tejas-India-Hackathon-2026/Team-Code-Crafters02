@@ -59,7 +59,7 @@ export default function HomePage(): JSX.Element {
             </section>
 
             {/* Category Discovery Section for Buyers */}
-            <section className="border-t border-[#E8E2D9] bg-white py-16 sm:py-20">
+            <section className="border-t border-[#E8E2D9] bg-white py-16 sm:py-20" aria-label="Handcrafted categories showcase">
                 <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
                         <div>
