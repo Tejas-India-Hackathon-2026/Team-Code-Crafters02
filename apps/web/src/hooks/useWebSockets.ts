@@ -29,8 +29,19 @@ export function useWebSockets(conversationId: string | null) {
                     try {
                         const parsed = JSON.parse(stored);
                         if (Array.isArray(parsed) && parsed.length > 0) {
-                            setMessages(parsed);
-                            loadedFromLocal = true;
+                            // Invalidate if the stored message contains stale "case" product inquiry for a non-case conversation
+                            const isStaleCase = parsed.some(
+                                (m: any) =>
+                                    typeof m.content === 'string' &&
+                                    m.content.toLowerCase().includes('"case"') &&
+                                    !conversationId.includes('case')
+                            );
+                            if (!isStaleCase) {
+                                setMessages(parsed);
+                                loadedFromLocal = true;
+                            } else {
+                                localStorage.removeItem(localKey);
+                            }
                         }
                     } catch (e) {}
                 }
@@ -54,7 +65,7 @@ export function useWebSockets(conversationId: string | null) {
                         return merged;
                     });
                 } else if (!loadedFromLocal && conversationId.startsWith('conv-')) {
-                    let productTitle = 'Handcrafted Item';
+                    let productTitle = 'Custom Craft Commission';
                     let price = 0;
                     let isCommission = false;
                     let artisanName = 'Verified Artisan';
@@ -85,8 +96,8 @@ export function useWebSockets(conversationId: string | null) {
                         ? {
                               id: `msg-proposal-${conversationId}`,
                               conversation_id: conversationId,
-                              sender_id: artisanId,
-                              sender_name: artisanName,
+                              sender_id: artisanId || 'artisan-maker',
+                              sender_name: artisanName || 'Verified Artisan Maker',
                               content: `Namaste! I am interested in making and delivering your custom handcrafted order "${productTitle}" for ₹${price.toLocaleString('en-IN')}.\n\n${proposalText ? `Proposal note: "${proposalText}"\n\n` : ''}I am ready to handcraft this to your exact specifications. Let's discuss dimensions, milestones, or any questions you have!`,
                               is_flagged: false,
                               flag_reason: null,

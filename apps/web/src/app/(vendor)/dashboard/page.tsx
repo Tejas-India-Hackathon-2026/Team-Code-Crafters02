@@ -484,6 +484,46 @@ export default function VendorDashboardPage() {
                         (b: any) => !((b.projectId === bidProjectId || b.project_id === bidProjectId) && (b.vendorId === user.id || b.vendor_id === user.id))
                     );
                     localStorage.setItem('karigar_project_bids_cache', JSON.stringify([...filtered, newBidRecord]));
+
+                    // Seed artisan proposal message thread
+                    const proj = openProjects.find((p) => p.id === bidProjectId);
+                    const projTitle = proj?.title || 'Custom Craft Commission';
+                    const convId = `conv-${user.id}-${bidProjectId}`;
+                    const cleanNote = proposalText.replace(/\[ESTIMATED_TURNAROUND:\s*.*?\]/, '').trim();
+
+                    const artisanProposalMsg = {
+                        id: `msg-proposal-${Date.now()}`,
+                        conversation_id: convId,
+                        sender_id: user.id,
+                        sender_name: profile.full_name || 'Verified Artisan Maker',
+                        content: `Namaste! I am interested in making and delivering your custom handcrafted order "${projTitle}" for ₹${amountNum.toLocaleString('en-IN')}.\n\n${cleanNote ? `Proposal note: "${cleanNote}"\n\n` : ''}I am ready to handcraft this to your exact specifications. Let's discuss dimensions, milestones, or any questions you have!`,
+                        is_flagged: false,
+                        flag_reason: null,
+                        created_at: new Date().toISOString(),
+                    };
+
+                    localStorage.setItem(`chat_msgs_${convId}`, JSON.stringify([artisanProposalMsg]));
+
+                    const newConvItem = {
+                        id: convId,
+                        artisanId: user.id,
+                        artisanName: `${profile.full_name || 'Verified Artisan'} (Verified Maker)`,
+                        craftCategory: `Custom Commission: ${projTitle}`,
+                        avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                        productTitle: projTitle,
+                        price: amountNum,
+                        unread: false,
+                        lastMessage: `Proposal: "${cleanNote}" (₹${amountNum.toLocaleString('en-IN')})`,
+                        lastTimestamp: 'Just now',
+                        projectId: bidProjectId,
+                        proposalText: cleanNote,
+                    };
+
+                    const currentRegistry = JSON.parse(localStorage.getItem('karigar_conversations_registry') || '[]');
+                    const regFiltered = Array.isArray(currentRegistry)
+                        ? currentRegistry.filter((c: any) => c.id !== convId && c.id !== 'conv-case-raja' && c.productTitle?.toLowerCase() !== 'case')
+                        : [];
+                    localStorage.setItem('karigar_conversations_registry', JSON.stringify([newConvItem, ...regFiltered]));
                 } catch (e) {}
             }
 

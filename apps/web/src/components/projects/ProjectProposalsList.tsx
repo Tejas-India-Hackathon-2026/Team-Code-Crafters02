@@ -54,8 +54,23 @@ export function ProjectProposalsList({
         if (typeof window !== 'undefined') {
             try {
                 localStorage.removeItem(`active_discussion_${vendorId}`);
-                const currentRegistry = JSON.parse(localStorage.getItem('karigar_conversations_registry') || '[]');
                 const convId = `conv-${vendorId}-${projectId}`;
+
+                // Seed artisan proposal greeting in chat messages
+                const artisanProposalMsg = {
+                    id: `msg-proposal-${Date.now()}`,
+                    conversation_id: convId,
+                    sender_id: vendorId,
+                    sender_name: `${vendorName} (Verified Maker)`,
+                    content: `Namaste! I am interested in making and delivering your custom handcrafted order "${title}" for ₹${price.toLocaleString('en-IN')}.\n\n${cleanText ? `Proposal note: "${cleanText}"\n\n` : ''}I am ready to handcraft this to your exact specifications. Let's discuss dimensions, milestones, or any questions you have!`,
+                    is_flagged: false,
+                    flag_reason: null,
+                    created_at: new Date().toISOString(),
+                };
+
+                localStorage.setItem(`chat_msgs_${convId}`, JSON.stringify([artisanProposalMsg]));
+
+                const currentRegistry = JSON.parse(localStorage.getItem('karigar_conversations_registry') || '[]');
                 const newConv = {
                     id: convId,
                     artisanId: vendorId,
@@ -67,7 +82,7 @@ export function ProjectProposalsList({
                     productTitle: title,
                     price: price,
                     unread: false,
-                    lastMessage: `Proposal for "${title}": ₹${price.toLocaleString('en-IN')}`,
+                    lastMessage: `Proposal: "${cleanText}" (₹${price.toLocaleString('en-IN')})`,
                     lastTimestamp: 'Just now',
                     projectId: projectId,
                     proposalText: cleanText,
