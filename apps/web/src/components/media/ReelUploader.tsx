@@ -106,6 +106,10 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                     } else {
                         try {
                             const errRes = JSON.parse(xhr.responseText);
+                            if (errRes.status === 'REJECTED' || errRes.tier === 'LOW_CONFIDENCE') {
+                                resolve(errRes);
+                                return;
+                            }
                             reject(new Error(errRes.error || `Upload failed with status ${xhr.status}`));
                         } catch {
                             reject(new Error(`Upload failed with status ${xhr.status}`));
@@ -117,7 +121,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                 xhr.send(formData);
             });
 
-            if (!uploadResult.success && uploadResult.status !== 'PENDING_ADMIN_REVIEW') {
+            if (!uploadResult.success && uploadResult.status !== 'PENDING_ADMIN_REVIEW' && uploadResult.status !== 'REJECTED') {
                 throw new Error(uploadResult.error || 'Upload failed.');
             }
 
@@ -125,7 +129,9 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
             setStatusMessage(
                 uploadResult.status === 'VERIFIED'
                     ? '✓ Reel verified & published live!'
-                    : '⏳ Reel queued for admin review (85%-90% confidence).'
+                    : uploadResult.status === 'PENDING_ADMIN_REVIEW'
+                    ? '⏳ Reel queued for admin review (85%-90% confidence).'
+                    : '❌ AI Verification Rejected (< 85% confidence score).'
             );
         } catch (err: any) {
             console.error('Upload Error:', err);

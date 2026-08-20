@@ -44,61 +44,98 @@ export async function POST(request: Request) {
         }
 
         // 2. Multimodal AI Video & Watermark / Logo Inspection with Gemini
-        let confidenceScore = 0.92;
-        let logoDetected = true;
-        let logoMatched = true;
-        let livenessVerified = true;
+        let confidenceScore = 0.40;
+        let isGenuineCraft = false;
+        let logoDetected = false;
+        let logoMatched = false;
+        let livenessVerified = false;
         let batchMarking = `#0${Math.floor(Math.random() * 9 + 1)}/50`;
-        let aiSummary = `Authentic handcrafted ${category} craftwork verified. Artisan branding and manual workshop process confirmed.`;
+        let aiSummary = `No authentic handcrafted ${category} process detected in this video. Please upload a genuine video of your workshop crafting process.`;
 
         const geminiApiKey = process.env.GEMINI_API_KEY;
 
         if (geminiApiKey && !geminiApiKey.includes('mock')) {
-            const prompt = `You are the expert AI Vision & Authenticity Inspector for the Karigar Kart Handmade Artisan Marketplace.
-Inspect the attached video for authentic artisan craftsmanship in the category: "${category}".
-Product Title: "${productTitle}"
-Maker Name / Studio: "${makerFullName}"
-Registered Logo / Studio Watermark: "${registeredLogo || makerFullName}"
+            const prompt = `You are the strict, unyielding AI Craft Authenticity Inspector for the Karigar Kart Handmade Artisan Marketplace.
+Your sole mission is to inspect the attached video for physical, authentic, handmade craftsmanship in the declared category: "${category}".
 
-Evaluation Guidelines:
-1. Authentic Craftsmanship Detection:
-   - Identify any hands-on artisanal craft process such as:
-     * Wood carving, coconut shell shaping/cutting/polishing, timber joinery, turning, or sanding.
-     * Hand-painting, brushwork, intricate detailing, sketching, varnishing, decorating, or glazing.
-     * Pottery, terracotta clay wheel-throwing, clay kneading, slab molding, or ceramic sculpting.
-     * Handloom weaving, embroidery, needlecraft, zardozi, or textile printing.
-     * Brass/metal beating, engraving, embossing, or jewelry fabrication.
-     * Workshop, studio table, or craft workspace with natural materials (wood, clay, coconut, stone, metal, fibers) and hand tools.
-2. Maker Branding & Watermark Verification:
-   - Check for any on-screen artisan watermark, logo overlay, channel handle (e.g., "Artist_...", signature, maker watermark), physical stamp, or workbench engraving.
-   - If an on-screen watermark, logo, or signature is visible (like "${makerFullName}" or an artist watermark), treat it as a verified brand match.
-3. Tiered AI Confidence Score Assignment:
-   - High Confidence (0.90 to 0.98): Clear manual crafting process, visible tools/materials, and matching maker watermark/stamp.
-   - Medium Confidence (0.85 to 0.89): Authentic craft item shown with subtle or partial process/branding, suitable for human admin review.
-   - Low Confidence (< 0.85): No visible handmade process or purely unrelated digital screen recording / CGI.
+Declared Product Title: "${productTitle}"
+Declared Category: "${category}"
+Declared Maker / Studio: "${makerFullName}"
 
-Output JSON ONLY in this exact schema:
+STRICT EVALUATION RULES:
+
+1. REJECTION CRITERIA (Assign confidence_score between 0.10 and 0.55):
+   - The video is random, generic, or unrelated content (e.g. video game recordings, movies, memes, dancing, talking head / vlogs, animals, vehicles, digital screen recordings, nature footage, food recipes).
+   - The video displays finished factory goods without showing physical handcrafted work in progress.
+   - The video shows automated industrial mass production machinery (e.g. computer-controlled CNC mills, industrial injection molds, automated conveyor assembly lines).
+   - The video is not related to "${category}".
+
+2. HITL REVIEW CRITERIA (Assign confidence_score between 0.85 and 0.89):
+   - Authentic handcrafted item is shown, and some manual tool work or studio table is visible, but the video is very short (< 5s of process) or physical maker hands are partially occluded.
+
+3. AUTO-APPROVAL CRITERIA (Assign confidence_score between 0.90 and 0.98):
+   - The video unambiguously demonstrates a human artisan actively handcrafting raw materials using manual tools (e.g. wood chisel/sander, pottery throwing wheel, manual handloom shuttle, hand brush painting, stone carving, manual metal beating).
+   - Workshop setting, raw materials (clay, wood, yarn, metal), and artisan process are clearly genuine.
+
+Output ONLY valid JSON with this exact schema:
 {
-  "confidence_score": 0.94,
-  "logo_detected": true,
-  "logo_matched": true,
-  "batch_marking": "#04/50",
-  "liveness_verified": true,
-  "summary": "Authentic artisan craftsmanship detected. Hand-worked process and maker branding watermark verified."
+  "is_genuine_craft": boolean,
+  "confidence_score": number,
+  "craft_detected": string,
+  "tools_observed": string[],
+  "materials_observed": string[],
+  "logo_detected": boolean,
+  "logo_matched": boolean,
+  "batch_marking": string,
+  "liveness_verified": boolean,
+  "summary": string
 }`;
 
-            const parts: any[] = [
-                {
+            // 2a. Attempt upload via Gemini Files API for reliable video handling
+            let geminiFileUri: string | null = null;
+            try {
+                const uploadRes = await fetch(
+                    `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${geminiApiKey}`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'X-Goog-Upload-Command': 'start, upload, finalize',
+                            'X-Goog-Upload-Header-Content-Length': buffer.length.toString(),
+                            'X-Goog-Upload-Header-Content-Type': file.type || 'video/mp4',
+                            'Content-Type': file.type || 'video/mp4',
+                        },
+                        body: buffer,
+                    }
+                );
+                if (uploadRes.ok) {
+                    const uploadData = await uploadRes.json();
+                    if (uploadData.file?.uri) {
+                        geminiFileUri = uploadData.file.uri;
+                    }
+                }
+            } catch (fileErr) {
+                console.warn('Gemini Files API upload note, trying inline payload:', fileErr);
+            }
+
+            const parts: any[] = [];
+            if (geminiFileUri) {
+                parts.push({
+                    fileData: {
+                        mimeType: file.type || 'video/mp4',
+                        fileUri: geminiFileUri,
+                    },
+                });
+            } else {
+                parts.push({
                     inlineData: {
                         mimeType: file.type || 'video/mp4',
                         data: buffer.toString('base64'),
                     },
-                },
-                { text: prompt },
-            ];
+                });
+            }
+            parts.push({ text: prompt });
 
-            const candidateModels = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-1.5-flash'];
-            let geminiEvaluated = false;
+            const candidateModels = ['gemini-flash-latest', 'gemini-3.6-flash', 'gemini-3.5-flash'];
 
             for (const model of candidateModels) {
                 try {
@@ -119,13 +156,19 @@ Output JSON ONLY in this exact schema:
                         const text = geminiData.candidates?.[0]?.content?.parts?.[0]?.text;
                         if (text) {
                             const parsed = JSON.parse(text);
-                            confidenceScore = typeof parsed.confidence_score === 'number' ? parsed.confidence_score : 0.92;
-                            logoDetected = parsed.logo_detected !== undefined ? !!parsed.logo_detected : true;
-                            logoMatched = parsed.logo_matched !== undefined ? !!parsed.logo_matched : true;
-                            livenessVerified = parsed.liveness_verified !== undefined ? !!parsed.liveness_verified : true;
+                            isGenuineCraft = parsed.is_genuine_craft !== undefined ? !!parsed.is_genuine_craft : (parsed.confidence_score >= 0.85);
+                            confidenceScore = typeof parsed.confidence_score === 'number' ? parsed.confidence_score : (isGenuineCraft ? 0.92 : 0.35);
+                            
+                            // If AI determined it's NOT genuine craft, strictly cap score below 0.85
+                            if (!isGenuineCraft && confidenceScore >= 0.85) {
+                                confidenceScore = 0.45;
+                            }
+
+                            logoDetected = parsed.logo_detected !== undefined ? !!parsed.logo_detected : isGenuineCraft;
+                            logoMatched = parsed.logo_matched !== undefined ? !!parsed.logo_matched : isGenuineCraft;
+                            livenessVerified = parsed.liveness_verified !== undefined ? !!parsed.liveness_verified : isGenuineCraft;
                             batchMarking = parsed.batch_marking || `#0${Math.floor(Math.random() * 9 + 1)}/50`;
-                            aiSummary = parsed.summary || `Authentic ${category} workshop process and maker watermark verified by Gemini Vision.`;
-                            geminiEvaluated = true;
+                            aiSummary = parsed.summary || (isGenuineCraft ? `Authentic ${category} craftwork verified by Gemini Vision.` : `Video did not show authentic ${category} craftsmanship.`);
                             break;
                         }
                     }
@@ -133,27 +176,19 @@ Output JSON ONLY in this exact schema:
                     console.warn(`Gemini evaluation note with ${model}:`, err);
                 }
             }
-
-            if (!geminiEvaluated) {
-                confidenceScore = 0.92;
-                logoDetected = true;
-                logoMatched = true;
-                livenessVerified = true;
-                aiSummary = `Authentic handcrafted ${category} video verified. Artisan manual shaping process and maker branding watermark detected.`;
-            }
         }
 
         // 3. TIERED VERIFICATION THRESHOLD LOGIC:
-        // Tier 1: Score < 85% -> REJECTED (Automatically reject, not uploaded to public feed)
+        // Tier 1: Score < 85% OR not genuine craft -> REJECTED (Automatically reject, not uploaded to public feed)
         // Tier 2: 85% <= Score < 90% -> PENDING_ADMIN_REVIEW (Flagged for manual HITL admin review)
         // Tier 3: 90% <= Score <= 100% -> VERIFIED (Auto-verified and published to public marketplace feed)
         
         const scorePct = Math.round(confidenceScore * 100);
         let reelStatus: 'REJECTED' | 'PENDING_ADMIN_REVIEW' | 'VERIFIED' = 'REJECTED';
 
-        if (confidenceScore >= 0.90) {
+        if (confidenceScore >= 0.90 && isGenuineCraft) {
             reelStatus = 'VERIFIED';
-        } else if (confidenceScore >= 0.85) {
+        } else if (confidenceScore >= 0.85 && isGenuineCraft) {
             reelStatus = 'PENDING_ADMIN_REVIEW';
         } else {
             reelStatus = 'REJECTED';
@@ -169,7 +204,7 @@ Output JSON ONLY in this exact schema:
                 ai_confidence_score: confidenceScore,
                 status: 'REJECTED',
                 tier: 'LOW_CONFIDENCE',
-                error: `AI Verification Failed (${scorePct}% score, minimum 85% required): ${aiSummary}`,
+                error: `AI Verification Failed (${scorePct}% confidence score): ${aiSummary}`,
                 aiSummary,
             }, { status: 422 });
         }

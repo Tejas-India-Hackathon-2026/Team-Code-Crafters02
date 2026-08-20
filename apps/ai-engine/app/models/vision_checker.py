@@ -26,12 +26,12 @@ def evaluate_craft_frames(
     api_key: Optional[str] = os.getenv("GEMINI_API_KEY")
     if not api_key or "mock" in api_key.lower() or genai is None:
         return {
-            "confidence_score": 0.94,
-            "logo_detected": True,
-            "logo_matched": True,
-            "batch_marking": "#01/50",
-            "liveness_verified": True,
-            "summary": "Handcrafted artisanal craftsmanship detected. Maker branding and manual process verified.",
+            "confidence_score": 0.40,
+            "logo_detected": False,
+            "logo_matched": False,
+            "batch_marking": "#00/50",
+            "liveness_verified": False,
+            "summary": "AI craft verification service unavailable or unconfigured.",
         }
 
     client = genai.Client(api_key=api_key)
@@ -56,14 +56,17 @@ def evaluate_craft_frames(
                 print(f"Could not download registered brand logo: {e}")
 
         prompt = """
-        Analyze these workshop and studio keyframes for artisan authenticity.
-        Evaluate:
-        1. Maker branding & watermark matching: Compare any logo, watermark (e.g. Artist handle, signature, studio logo, watermark overlay) visible in the video frames with reference branding.
-        2. Authentic artisanal crafting activity: Recognize manual handcrafting, carving, wood/coconut/clay shaping, polishing, painting, joining, or sculpting.
-        3. Sequential limited-edition batch marking or artisan signature (e.g. #04/50, signature engraving).
+        You are the strict AI Authenticity Inspector for Karigar Kart Artisan Marketplace.
+        Analyze these workshop and studio video keyframes for genuine physical handcrafting.
+
+        Strict Rules:
+        1. If the keyframes show random content, gaming, memes, vehicles, scenery, animals, CGI, screen recordings, or mass factory automation -> assign confidence_score between 0.15 and 0.50 and state in summary why it was rejected.
+        2. If the keyframes clearly show a human artisan actively handcrafting raw materials (wood, clay, fiber, metal, cloth) using physical hand tools -> assign confidence_score between 0.90 and 0.98.
+        3. Check for any visible artisan logo, maker signature, or workshop watermark.
 
         Output JSON ONLY in this exact format:
         {
+          "is_genuine_craft": true,
           "confidence_score": 0.94,
           "logo_detected": true,
           "logo_matched": true,
@@ -74,7 +77,7 @@ def evaluate_craft_frames(
         """
 
         # 3. Multi-Model execution with fallback
-        candidate_models: List[str] = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"]
+        candidate_models: List[str] = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash"]
         last_error: Optional[Exception] = None
 
         for model_name in candidate_models:
@@ -96,20 +99,23 @@ def evaluate_craft_frames(
                     # Strip potential markdown code blocks
                     clean_text = re.sub(r"^```(?:json)?\n?", "", clean_text, flags=re.MULTILINE)
                     clean_text = re.sub(r"\n?```$", "", clean_text, flags=re.MULTILINE)
-                    return json.loads(clean_text)
+                    parsed_json = json.loads(clean_text)
+                    if parsed_json.get("is_genuine_craft") is False and parsed_json.get("confidence_score", 0) >= 0.85:
+                        parsed_json["confidence_score"] = 0.45
+                    return parsed_json
             except Exception as model_err:
                 last_error = model_err
                 continue
 
-        # If models failed, return graceful structured fallback
+        # If models failed, return graceful structured rejection
         print(f"Vision checker fallback triggered: {last_error}")
         return {
-            "confidence_score": 0.92,
-            "logo_detected": True,
-            "logo_matched": True,
-            "batch_marking": "#01/50",
-            "liveness_verified": True,
-            "summary": "Handcrafted artisan process and maker branding watermark detected.",
+            "confidence_score": 0.40,
+            "logo_detected": False,
+            "logo_matched": False,
+            "batch_marking": "#00/50",
+            "liveness_verified": False,
+            "summary": "Could not confirm authentic manual craftsmanship in the provided video frames.",
         }
 
     finally:
