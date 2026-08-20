@@ -166,6 +166,7 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                     {/* Received Bids (Real-time synchronized across tabs and cache) */}
                     <ProjectProposalsList
                         projectId={id}
+                        projectTitle={project.title}
                         initialBids={(bids || []) as any}
                         isOwner={!!isOwner}
                     />

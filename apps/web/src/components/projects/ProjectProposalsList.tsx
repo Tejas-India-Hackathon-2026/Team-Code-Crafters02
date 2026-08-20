@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, User, Calendar, Clock, DollarSign } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { ShieldCheck, User, Calendar, Clock, DollarSign, MessageSquare, ArrowRight } from 'lucide-react';
 
 interface Proposal {
     id: string;
@@ -34,10 +35,57 @@ interface ProjectProposalsListProps {
  */
 export function ProjectProposalsList({
     projectId,
+    projectTitle,
     initialBids = [],
     isOwner = false,
 }: ProjectProposalsListProps): React.ReactNode {
+    const router = useRouter();
     const [bids, setBids] = useState<Proposal[]>(initialBids);
+
+    const handleOpenChat = (bid: Proposal) => {
+        const vendorId = bid.vendor_id || bid.vendorId || 'artisan-raja';
+        const vendorName = bid.vendor?.full_name || 'Raja';
+        const price = bid.bid_amount || bid.amount || 0;
+        const cleanText = (bid.proposal_text || bid.proposalText || '')
+            .replace(/\[ESTIMATED_TURNAROUND:\s*.*?\]/, '')
+            .trim();
+        const title = projectTitle || 'Custom Craft Commission';
+
+        if (typeof window !== 'undefined') {
+            try {
+                const currentRegistry = JSON.parse(localStorage.getItem('karigar_conversations_registry') || '[]');
+                const convId = `conv-${vendorId}`;
+                const newConv = {
+                    id: convId,
+                    artisanId: vendorId,
+                    artisanName: `${vendorName} (Verified Artisan)`,
+                    craftCategory: `Custom Commission: ${title}`,
+                    avatarUrl:
+                        bid.vendor?.avatar_url ||
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    productTitle: title,
+                    price: price,
+                    unread: true,
+                    lastMessage: `Proposal for "${title}": ₹${price.toLocaleString('en-IN')}`,
+                    lastTimestamp: 'Just now',
+                    projectId: projectId,
+                    proposalText: cleanText,
+                };
+                const filtered = Array.isArray(currentRegistry)
+                    ? currentRegistry.filter((c: any) => c.id !== convId && c.artisanId !== vendorId)
+                    : [];
+                localStorage.setItem('karigar_conversations_registry', JSON.stringify([newConv, ...filtered]));
+            } catch (e) {}
+        }
+
+        router.push(
+            `/messages?partner=${vendorId}&artisanId=${vendorId}&vendorName=${encodeURIComponent(
+                vendorName
+            )}&productTitle=${encodeURIComponent(title)}&price=${price}&category=custom_commission&projectId=${projectId}&proposalText=${encodeURIComponent(
+                cleanText
+            )}`
+        );
+    };
 
     useEffect(() => {
         const syncBids = () => {
