@@ -168,6 +168,7 @@ interface Reel {
     video_url: string;
     status: string;
     confidence_score: number | null;
+    ai_confidence_score?: number | null;
     extracted_metadata: {
         productTitle?: string;
         category?: string;
