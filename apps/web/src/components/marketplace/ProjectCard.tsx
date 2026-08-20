@@ -16,6 +16,7 @@ export interface ProjectCardProps {
     status?: string;
 }
 
+/** ProjectCard renders marketplace commission brief with budget and category tags. */
 export function ProjectCard({
     id,
     title,
