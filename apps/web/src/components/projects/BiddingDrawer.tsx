@@ -70,27 +70,49 @@ export default function BiddingDrawer({
             return;
         }
 
+        const amountNum = parseFloat(bidAmount);
+        if (isNaN(amountNum) || amountNum < 100) {
+            setStatusMsg('Proposed price must be at least ₹100.');
+            setStatusType('error');
+            return;
+        }
+
+        const cleanProposal = proposalText.trim();
+        if (cleanProposal.length < 15) {
+            setStatusMsg('Please provide a detailed proposal of at least 15 characters.');
+            setStatusType('error');
+            return;
+        }
+
+        if (cleanProposal.length > 5000) {
+            setStatusMsg('Proposal text must not exceed 5000 characters.');
+            setStatusType('error');
+            return;
+        }
+
         try {
             setLoading(true);
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) throw new Error('Unauthorized');
+            if (!user) throw new Error('You must be signed in as a verified maker.');
 
             const { error } = await supabase.from('project_bids').insert({
                 project_id: projectId,
                 vendor_id: user.id,
-                bid_amount: parseFloat(bidAmount),
-                proposal_text: proposalText,
+                bid_amount: amountNum,
+                proposal_text: `${cleanProposal}\n\n[ESTIMATED_TURNAROUND: ${estimatedDays} Days]`,
                 status: 'PENDING',
             });
 
             if (error) throw error;
 
-            setStatusMsg('Bid proposal submitted successfully!');
+            setStatusMsg('✓ Confidential proposal successfully submitted to the client.');
+            setStatusType('success');
             setBidAmount('');
             setProposalText('');
             if (onBidSubmitted) onBidSubmitted();
         } catch (err: any) {
-            setStatusMsg(`Error: ${err.message}`);
+            setStatusMsg(err.message || 'Failed to submit proposal.');
+            setStatusType('error');
         } finally {
             setLoading(false);
         }
