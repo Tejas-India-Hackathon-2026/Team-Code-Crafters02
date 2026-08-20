@@ -72,11 +72,13 @@ export function EscrowStatusBadge({
         IN_TRIAGE: { label: 'Under Platform Review', bg: 'bg-[#FDEDED]', text: 'text-[#D32F2F]', icon: AlertTriangle, pulse: true },
     };
 
-    const current = config[status.toUpperCase()] || {
-        label: status,
+    const sanitizedKey = typeof status === 'string' && status ? status.trim().toUpperCase() : 'INITIATED';
+    const current = config[sanitizedKey] || {
+        label: typeof status === 'string' && status ? status.replace(/_/g, ' ') : 'Processing Escrow',
         bg: 'bg-[#FAF8F5]',
         text: 'text-[#6B635B]',
         icon: ShieldCheck,
+        pulse: false,
     };
 
     const sizeClasses = {
