@@ -293,6 +293,36 @@ function MessagesContent() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
+    // Synchronize order finalization across tabs
+    useEffect(() => {
+        const syncOrderFinalized = () => {
+            if (activeDiscussion?.artisanId) {
+                const stored = localStorage.getItem(`active_discussion_${activeDiscussion.artisanId}`);
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        if (parsed.status === 'ORDER_FINALIZED' && activeDiscussion.status !== 'ORDER_FINALIZED') {
+                            setActiveDiscussion(parsed);
+                        }
+                    } catch (e) {}
+                }
+            }
+            try {
+                const rawReg = localStorage.getItem('karigar_conversations_registry');
+                if (rawReg) {
+                    setConversationsList(JSON.parse(rawReg));
+                }
+            } catch (e) {}
+        };
+
+        window.addEventListener('storage', syncOrderFinalized);
+        window.addEventListener('karigar_order_finalized', syncOrderFinalized);
+        return () => {
+            window.removeEventListener('storage', syncOrderFinalized);
+            window.removeEventListener('karigar_order_finalized', syncOrderFinalized);
+        };
+    }, [activeDiscussion]);
+
     const handleSend = (e: React.FormEvent) => {
         e.preventDefault();
         if (!inputText.trim()) return;
@@ -714,16 +744,33 @@ function MessagesContent() {
                         })}
 
                         {/* In-Chat Interactive Formal Maker Quote Card */}
-                        <div className="w-full max-w-lg my-2">
-                            <QuoteCard
-                                title={activeDiscussion?.productTitle || 'Custom Bridal Katan Silk Saree (6.3m)'}
-                                grossPrice={activeDiscussion?.price || 24500}
-                                isVendor={userProfile?.is_vendor || false}
-                                isVerified={userProfile?.vendor_verified || false}
-                                onSendQuoteMessage={(quoteStr) => sendMessage(quoteStr)}
-                                onAcceptAndFund={(gross, tds, net) => handleAcceptAndFundEscrow(gross, tds, net)}
-                            />
-                        </div>
+                        {activeDiscussion && activeDiscussion.status !== 'ORDER_FINALIZED' && (
+                            <div className="w-full max-w-lg my-2">
+                                <QuoteCard
+                                    title={activeDiscussion?.productTitle || 'Custom Bridal Katan Silk Saree (6.3m)'}
+                                    grossPrice={activeDiscussion?.price || 24500}
+                                    isVendor={userProfile?.is_vendor || false}
+                                    isVerified={userProfile?.vendor_verified || false}
+                                    isFinalized={false}
+                                    onSendQuoteMessage={(quoteStr) => sendMessage(quoteStr)}
+                                    onAcceptAndFund={(gross, tds, net) => handleAcceptAndFundEscrow(gross, tds, net)}
+                                />
+                            </div>
+                        )}
+
+                        {activeDiscussion && activeDiscussion.status === 'ORDER_FINALIZED' && (
+                            <div className="w-full max-w-lg my-2 p-4 bg-[#EDF7ED] border border-[#2E7D32]/30 rounded-2xl flex items-center justify-between gap-3 text-[#2E7D32] animate-fade-in shadow-xs">
+                                <div className="flex items-center gap-2.5">
+                                    <CheckCircle2 className="w-5 h-5 shrink-0 text-[#2E7D32]" />
+                                    <div>
+                                        <p className="text-xs font-bold font-display">Order Finalized & Escrow Payout Released</p>
+                                        <p className="text-[11px] text-[#6B635B]">
+                                            Milestone for "{activeDiscussion.productTitle}" (₹{activeDiscussion.price?.toLocaleString('en-IN')}) is complete. Select a new reel to start another inquiry.
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
 
                         <div ref={messagesEndRef} />
                     </div>
