@@ -666,7 +666,7 @@ export default function VendorDashboardPage() {
 
                                     <div className="pt-3 border-t border-[#F3EFEA] flex items-center justify-end">
                                         <Link
-                                            href={`/messages?partner=${inq.buyerId}&artisanId=${user?.id || 'raja'}&buyerName=${encodeURIComponent(inq.buyerName)}&productTitle=${encodeURIComponent(inq.productTitle)}&price=${inq.price}`}
+                                            href={`/messages?partner=${inq.buyerId}&artisanId=${profile?.id || 'raja'}&buyerName=${encodeURIComponent(inq.buyerName)}&productTitle=${encodeURIComponent(inq.productTitle)}&price=${inq.price}`}
                                             className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1 font-semibold"
                                         >
                                             <MessageSquare className="w-3.5 h-3.5" />
