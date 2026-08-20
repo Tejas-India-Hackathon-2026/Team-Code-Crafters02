@@ -36,7 +36,7 @@ export function ChatPanel({
     messages,
     onSendMessage,
     onAcceptQuote,
-}: ChatPanelProps): JSX.Element {
+}: ChatPanelProps): React.ReactNode {
     const [input, setInput] = useState<string>('');
 
     const handleSend = (e: React.FormEvent) => {
@@ -92,11 +92,10 @@ export function ChatPanel({
                             {msg.quoteProposal && (
                                 <div className="mt-3">
                                     <QuoteCard
-                                        productTitle={msg.quoteProposal.productTitle}
-                                        price={msg.quoteProposal.price}
-                                        category={msg.quoteProposal.category}
-                                        status={msg.quoteProposal.status}
-                                        onAccept={onAcceptQuote}
+                                        title={msg.quoteProposal.productTitle}
+                                        grossPrice={msg.quoteProposal.price}
+                                        isVerified={isVerified}
+                                        onAcceptAndFund={onAcceptQuote ? () => onAcceptQuote() : undefined}
                                     />
                                 </div>
                             )}
