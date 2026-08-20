@@ -1,13 +1,14 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '../../lib/supabaseClient';
 import { Mail, Lock, User, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function AuthForm() {
     const supabase = createClient();
     const router = useRouter();
+    const searchParams = useSearchParams();
 
     const [mode, setMode] = useState<'signin' | 'register'>('signin');
     const [email, setEmail] = useState('');
@@ -18,15 +19,6 @@ export default function AuthForm() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
-
-    const navigateTo = (dest: string) => {
-        try {
-            router.refresh();
-            router.push(dest);
-        } catch {
-            window.location.replace(dest);
-        }
-    };
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -51,14 +43,18 @@ export default function AuthForm() {
             });
 
             if (!error && data?.user) {
+                // Ensure session is populated
+                await supabase.auth.getSession();
+
                 const { data: prof } = await supabase
                     .from('profiles')
                     .select('is_vendor')
                     .eq('id', data.user.id)
                     .maybeSingle();
 
-                const dest = prof?.is_vendor ? '/artisan' : '/profile';
-                navigateTo(dest);
+                const nextUrl = searchParams?.get('next');
+                const dest = nextUrl || (prof?.is_vendor ? '/artisan' : '/profile');
+                window.location.href = dest;
                 return;
             }
 
@@ -80,8 +76,11 @@ export default function AuthForm() {
                     refresh_token: loginData.session.refresh_token,
                 });
 
-                const dest = loginData.isVendor ? '/artisan' : '/profile';
-                navigateTo(dest);
+                await supabase.auth.getSession();
+
+                const nextUrl = searchParams?.get('next');
+                const dest = nextUrl || (loginData.isVendor ? '/artisan' : '/profile');
+                window.location.href = dest;
                 return;
             }
 
@@ -153,8 +152,11 @@ export default function AuthForm() {
                 });
             }
 
-            const dest = isArtisan ? '/verification/onboarding' : '/profile';
-            navigateTo(dest);
+            await supabase.auth.getSession();
+
+            const nextUrl = searchParams?.get('next');
+            const dest = nextUrl || (isArtisan ? '/verification/onboarding' : '/profile');
+            window.location.href = dest;
         } catch (err: any) {
             console.error('Registration Error:', err);
             setErrorMsg(err.message || 'Registration failed. Please check your details and try again.');

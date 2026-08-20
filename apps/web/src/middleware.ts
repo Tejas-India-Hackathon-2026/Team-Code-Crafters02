@@ -30,7 +30,7 @@ export async function middleware(request: NextRequest) {
 
     const pathname = request.nextUrl.pathname;
 
-    // 1. If user is already logged in and visits /login or /auth, redirect to profile or artisan
+    // 1. If user is already logged in and visits /login or /auth, redirect to requested next route or artisan/profile
     if ((pathname === '/login' || pathname === '/auth') && user) {
         const nextUrl = request.nextUrl.searchParams.get('next');
         if (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login') && !nextUrl.startsWith('/auth')) {
@@ -47,26 +47,7 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(new URL(dest, request.url));
     }
 
-    // 2. Protected route groups: /profile, /messages, /orders, /dashboard, /verification, /triage
-    const protectedPrefixes = [
-        '/profile',
-        '/messages',
-        '/orders',
-        '/dashboard',
-        '/verification',
-        '/triage',
-    ];
-
-    const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
-
-    // Redirect unauthenticated users to /login
-    if (isProtected && !user) {
-        const loginUrl = new URL('/login', request.url);
-        loginUrl.searchParams.set('next', pathname);
-        return NextResponse.redirect(loginUrl);
-    }
-
-    // 3. Admin Route Protection: Block non-admin access to /triage
+    // 2. Admin Route Protection: Block non-admin access to /triage
     if (pathname.startsWith('/triage') && user) {
         const { data: profile } = await supabase
             .from('profiles')

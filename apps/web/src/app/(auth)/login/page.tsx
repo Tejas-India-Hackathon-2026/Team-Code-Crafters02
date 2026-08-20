@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import AuthForm from '../../../components/auth/AuthForm';
 
 export default function LoginPage() {
@@ -19,7 +20,9 @@ export default function LoginPage() {
 
                 {/* Auth Card */}
                 <div className="p-8 bg-white rounded-xl border border-[#E8E2D9] shadow-card">
-                    <AuthForm />
+                    <Suspense fallback={<div className="p-8 text-center text-xs text-stone-500 font-mono">Loading authentication portal...</div>}>
+                        <AuthForm />
+                    </Suspense>
                 </div>
 
                 {/* Trust Footer */}
