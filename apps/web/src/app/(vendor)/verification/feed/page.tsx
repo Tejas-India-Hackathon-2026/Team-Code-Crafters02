@@ -5,16 +5,9 @@ import { createClient } from '../../../../lib/supabaseClient';
 import {
     Video,
     ShieldCheck,
-    AlertTriangle,
-    Eye,
-    ChevronLeft,
-    ChevronRight,
     Search,
-    Tag,
     ShoppingBag,
-    MessageSquare,
     Sparkles,
-    LayoutGrid,
     Play,
     CheckCircle2,
     X,
@@ -28,6 +21,7 @@ import Link from 'next/link';
 
 const CRAFT_CATEGORIES = [
     { id: 'all', label: 'All Crafts', icon: '✨' },
+    { id: 'bamboo', label: 'Bamboo & Coconut Craft', icon: '🎋' },
     { id: 'metalcraft', label: 'Metalcraft & Brassware', icon: '🪚' },
     { id: 'jewelry', label: 'Handmade Jewelry', icon: '💍' },
     { id: 'stonecraft', label: 'Stone & Marble Craft', icon: '🗿' },
@@ -37,7 +31,6 @@ const CRAFT_CATEGORIES = [
     { id: 'painting', label: 'Traditional Painting & Folk Art', icon: '🎨' },
     { id: 'leathercraft', label: 'Leathercraft', icon: '👜' },
     { id: 'terracotta', label: 'Terracotta & Clay Art', icon: '🪴' },
-    { id: 'bamboo', label: 'Bamboo & Cane Craft', icon: '🎋' },
     { id: 'embroidery', label: 'Embroidery & Zardozi', icon: '🪡' },
 ];
 
@@ -56,7 +49,6 @@ interface MakerCardItem {
     location: string;
     category: string;
     categoryLabel: string;
-    thumbnailUrl: string;
     videoUrl: string;
     confidenceScore: number;
     story: string;
@@ -76,7 +68,6 @@ const FEATURED_MAKERS: MakerCardItem[] = [
         location: 'Bastar, Chhattisgarh',
         category: 'metalcraft',
         categoryLabel: 'Metalwork',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80',
         videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-blacksmith-hammering-glowing-iron-41717-large.mp4',
         confidenceScore: 0.988,
         story: 'Creating 4,000-year-old Harappan lost-wax brass and bronze tribal sculptures, lamp stands, and deities using beeswax coils and riverbed clay molds.',
@@ -97,7 +88,6 @@ const FEATURED_MAKERS: MakerCardItem[] = [
         location: 'Thanjavur, Tamil Nadu',
         category: 'jewelry',
         categoryLabel: 'Jewelry',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?w=800&auto=format&fit=crop&q=80',
         videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-hands-of-a-jeweler-working-with-gems-41718-large.mp4',
         confidenceScore: 0.969,
         story: 'Crafting authentic 92.5 Hallmarked silver temple jewelry, silver filigree earrings, and gold-dipped bridal waistbands (Oddiyanam) with natural Kemp stones.',
@@ -118,7 +108,6 @@ const FEATURED_MAKERS: MakerCardItem[] = [
         location: 'Agra, Uttar Pradesh',
         category: 'stonecraft',
         categoryLabel: 'Stone Carving',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=800&auto=format&fit=crop&q=80',
         videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-potter-working-on-a-clay-vase-41712-large.mp4',
         confidenceScore: 0.979,
         story: 'Preserving the Taj Mahal Parchin Kari technique. Inlaying semi-precious stones (Lapis Lazuli, Malachite, Jasper, Mother of Pearl) into pure Makrana white marble.',
@@ -139,7 +128,6 @@ const FEATURED_MAKERS: MakerCardItem[] = [
         location: 'Varanasi, Uttar Pradesh',
         category: 'handloom',
         categoryLabel: 'Handloom',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=800&auto=format&fit=crop&q=80',
         videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-woman-weaving-on-a-loom-41713-large.mp4',
         confidenceScore: 0.965,
         story: 'Pure mulberry unbleached silk and hand-punched Jacquard graph cards. Pit-loom hand weaving with certified real gold and silver zari threads.',
@@ -160,7 +148,6 @@ const FEATURED_MAKERS: MakerCardItem[] = [
         location: 'Jaipur, Rajasthan',
         category: 'woodworking',
         categoryLabel: 'Woodworking',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1538688525198-9b88f6f53126?w=800&auto=format&fit=crop&q=80',
         videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-carpenter-measuring-a-piece-of-wood-41716-large.mp4',
         confidenceScore: 0.942,
         story: 'Hand-chiseled floral relief in seasoned Rajasthan Sheesham and Teak wood. Traditional dovetail joinery with natural beeswax burnish finish.',
@@ -181,7 +168,6 @@ const FEATURED_MAKERS: MakerCardItem[] = [
         location: 'Khurja, Uttar Pradesh',
         category: 'pottery',
         categoryLabel: 'Pottery',
-        thumbnailUrl: 'https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=800&auto=format&fit=crop&q=80',
         videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-potter-working-on-a-clay-vase-41712-large.mp4',
         confidenceScore: 0.954,
         story: 'Wheel-thrown stoneware and terracotta pottery. Naturally glazed with river sediment and wood ash, kiln-fired at 1200°C for food-grade strength.',
@@ -253,39 +239,45 @@ export default function ReelFeedPage() {
                 const formattedFromDb: MakerCardItem[] = dbReels.map((r: any, idx: number) => {
                     const meta = r.extracted_metadata || {};
                     const score = r.ai_confidence_score || r.confidence_score || 0.94;
-                    const catId = (meta.category || 'craft').toLowerCase();
+                    const catId = (meta.category || 'bamboo').toLowerCase();
                     const catObj = CRAFT_CATEGORIES.find((c) => c.id === catId);
+
+                    const vendorName = r.vendor?.full_name || 'Khushboo Handicrafts';
+                    const avatarUrl = r.vendor?.avatar_url || 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&auto=format&fit=crop&q=80';
+                    const productTitle = meta.productTitle || 'Hand-Painted Coconut Vase';
+                    const price = meta.price ? Number(meta.price) : 300;
 
                     return {
                         id: r.id || `db-${idx}`,
                         vendor_id: r.vendor_id,
-                        vendorName: r.vendor?.full_name || 'Verified Master Artisan',
-                        avatarUrl: r.vendor?.avatar_url || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-                        rating: 4.95,
-                        reviewCount: 38 + idx * 5,
-                        location: 'India Heritage Cluster',
+                        vendorName,
+                        avatarUrl,
+                        rating: 4.96,
+                        reviewCount: 24 + idx * 3,
+                        location: 'Central India Craft Cluster',
                         category: catId,
-                        categoryLabel: catObj ? catObj.label.split(' ')[0] : 'Handcrafted',
-                        thumbnailUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?w=800&auto=format&fit=crop&q=80',
+                        categoryLabel: catObj ? catObj.label.split(' ')[0] : 'Coconut Craft',
                         videoUrl: r.video_url,
                         confidenceScore: score,
-                        story: meta.description || meta.summary || 'Authentic handcrafted workshop process verified by Gemini Multimodal Vision.',
+                        story: meta.description || meta.summary || 'Handcrafted coconut peel and natural materials shaped and painted by hand in artisan workshop.',
                         productPills: [
                             {
-                                name: meta.productTitle || 'Handcrafted Artisan Item',
-                                price: meta.price || 2499,
+                                name: productTitle,
+                                price: price,
                             },
                         ],
-                        startingPrice: meta.price || 2499,
-                        batchMarking: meta.batch_marking || '#01/50',
+                        startingPrice: price,
+                        batchMarking: meta.batch_marking || '#08/50',
                     };
                 });
 
+                // Combine real uploaded database reels at the front
                 setMakers([...formattedFromDb, ...FEATURED_MAKERS]);
             } else {
                 setMakers(FEATURED_MAKERS);
             }
-        } catch {
+        } catch (err) {
+            console.warn('Error fetching reels from DB:', err);
             setMakers(FEATURED_MAKERS);
         } finally {
             setLoading(false);
@@ -517,25 +509,27 @@ export default function ReelFeedPage() {
                                     className="bg-white border border-[#E8E2D9] rounded-3xl p-5 shadow-card hover:shadow-elevated transition-all flex flex-col justify-between group"
                                 >
                                     <div>
-                                        {/* Top Media Thumbnail Box */}
-                                        <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-black mb-4 group/media">
-                                            <img
-                                                src={maker.thumbnailUrl}
-                                                alt={maker.vendorName}
-                                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                        {/* Top Media Video Player Box with Overlays */}
+                                        <div className="relative aspect-[16/10] rounded-2xl overflow-hidden bg-black mb-4 group/media border border-[#E8E2D9]">
+                                            <video
+                                                src={maker.videoUrl}
+                                                controls
+                                                playsInline
+                                                preload="metadata"
+                                                className="w-full h-full object-cover"
                                             />
 
                                             {/* Top Left: AI Verified Badge */}
-                                            <div className="absolute top-3 left-3 z-10">
-                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-md text-[#2E7D32] border border-[#2E7D32]/40 shadow-xs">
+                                            <div className="absolute top-3 left-3 z-10 pointer-events-none">
+                                                <span className="inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-1 rounded-full bg-black/70 backdrop-blur-md text-[#2E7D32] border border-[#2E7D32]/40 shadow-xs">
                                                     <CheckCircle2 className="w-3 h-3 text-[#2E7D32]" />
                                                     <span>AI VERIFIED</span>
                                                 </span>
                                             </div>
 
                                             {/* Bottom Left: Craft Category Badge */}
-                                            <div className="absolute bottom-3 left-3 z-10">
-                                                <span className="text-[11px] font-semibold bg-black/70 backdrop-blur-md text-white px-2.5 py-1 rounded-lg">
+                                            <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
+                                                <span className="text-[11px] font-semibold bg-black/75 backdrop-blur-md text-white px-2.5 py-0.5 rounded-md">
                                                     {maker.categoryLabel}
                                                 </span>
                                             </div>
@@ -544,7 +538,8 @@ export default function ReelFeedPage() {
                                             <div className="absolute bottom-3 right-3 z-10">
                                                 <button
                                                     onClick={() => setActiveModalVideo(maker)}
-                                                    className="flex items-center gap-1.5 text-[11px] font-semibold bg-black/75 hover:bg-black text-white px-3 py-1 rounded-lg backdrop-blur-md transition-colors cursor-pointer shadow-sm"
+                                                    className="flex items-center gap-1 text-[11px] font-semibold bg-black/80 hover:bg-black text-white px-2.5 py-0.5 rounded-md backdrop-blur-md transition-colors cursor-pointer shadow-sm"
+                                                    title="Expand Full Reel"
                                                 >
                                                     <Play className="w-3 h-3 text-white fill-white" />
                                                     <span>AI Reel ({scorePct}%)</span>
