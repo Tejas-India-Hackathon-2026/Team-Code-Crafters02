@@ -58,7 +58,7 @@ export default function AuthForm() {
                 return;
             }
 
-            // 2. Server-assisted login fallback (auto-confirms unverified emails, syncs sessions)
+            // 2. Server-assisted login fallback (auto-confirms unverified emails)
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -70,18 +70,24 @@ export default function AuthForm() {
 
             const loginData = await res.json();
 
-            if (loginData.success && loginData.session) {
-                await supabase.auth.setSession({
-                    access_token: loginData.session.access_token,
-                    refresh_token: loginData.session.refresh_token,
+            if (loginData.success) {
+                // Retry client signIn now that account is confirmed
+                const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+                    email: cleanEmail,
+                    password: cleanPassword,
                 });
 
-                await supabase.auth.getSession();
-
-                const nextUrl = searchParams?.get('next');
-                const dest = nextUrl || (loginData.isVendor ? '/artisan' : '/profile');
-                window.location.href = dest;
-                return;
+                if (!retryError && retryData?.user) {
+                    await supabase.auth.getSession();
+                    const nextUrl = searchParams?.get('next');
+                    const dest = nextUrl || (loginData.isVendor ? '/artisan' : '/profile');
+                    window.location.href = dest;
+                    return;
+                } else {
+                    setErrorMsg(retryError?.message || 'Invalid email or password. Please check your credentials.');
+                    setLoading(false);
+                    return;
+                }
             }
 
             if (loginData.notFound) {
@@ -125,7 +131,7 @@ export default function AuthForm() {
         setLoading(true);
 
         try {
-            // 1. Register and establish session via server API
+            // 1. Register confirmed account and profile via server API
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -145,12 +151,11 @@ export default function AuthForm() {
                 return;
             }
 
-            if (regData.session) {
-                await supabase.auth.setSession({
-                    access_token: regData.session.access_token,
-                    refresh_token: regData.session.refresh_token,
-                });
-            }
+            // 2. Sign in immediately on client
+            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+                email: cleanEmail,
+                password: cleanPassword,
+            });
 
             await supabase.auth.getSession();
 

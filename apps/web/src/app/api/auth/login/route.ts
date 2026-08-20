@@ -1,6 +1,4 @@
 import { NextResponse } from 'next/server';
-import { cookies } from 'next/headers';
-import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 
 const supabaseAdmin = createClient(
@@ -12,8 +10,8 @@ export async function POST(request: Request) {
     try {
         const { email, password } = await request.json();
 
-        if (!email || !password) {
-            return NextResponse.json({ success: false, error: 'Email and password are required' }, { status: 400 });
+        if (!email) {
+            return NextResponse.json({ success: false, error: 'Email is required' }, { status: 400 });
         }
 
         const cleanEmail = email.trim().toLowerCase();
@@ -48,43 +46,7 @@ export async function POST(request: Request) {
             });
         }
 
-        // 3. Create SSR Supabase Client connected to cookies
-        const cookieStore = await cookies();
-        const supabaseSSR = createServerClient(
-            process.env.NEXT_PUBLIC_SUPABASE_URL!,
-            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-            {
-                cookies: {
-                    getAll() {
-                        return cookieStore.getAll();
-                    },
-                    setAll(cookiesToSet) {
-                        try {
-                            cookiesToSet.forEach(({ name, value, options }) =>
-                                cookieStore.set(name, value, options)
-                            );
-                        } catch {
-                            // Handled in Server Action / Route Handler
-                        }
-                    },
-                },
-            }
-        );
-
-        // 4. Attempt authentication with SSR client
-        const { data: authData, error: authError } = await supabaseSSR.auth.signInWithPassword({
-            email: cleanEmail,
-            password: password,
-        });
-
-        if (authError) {
-            return NextResponse.json({
-                success: false,
-                error: 'Invalid password. Please check your password or reset your credentials.',
-            }, { status: 200 });
-        }
-
-        // 5. Fetch profile to check vendor/buyer status
+        // 3. Fetch profile to check vendor/buyer status
         const { data: prof } = await supabaseAdmin
             .from('profiles')
             .select('is_vendor, full_name')
@@ -93,17 +55,16 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            session: authData.session,
-            user: authData.user,
+            user: { id: foundUser.id, email: foundUser.email },
             isVendor: !!prof?.is_vendor,
             profile: prof,
-            message: 'Signed in successfully.',
+            message: 'User confirmed. Ready for sign-in.',
         });
     } catch (err: any) {
         console.error('Login API error:', err);
         return NextResponse.json({
             success: false,
-            error: err.message || 'Login failed. Please try again.',
+            error: err.message || 'Login verification failed. Please try again.',
         }, { status: 200 });
     }
 }
