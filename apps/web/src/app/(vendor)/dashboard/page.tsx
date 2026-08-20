@@ -184,8 +184,8 @@ export default function VendorDashboardPage() {
             setMyProducts([]);
         }
 
-        // 3. Populate Buyer Chats & Inquiries
-        setBuyerInquiries([
+        // 3. Populate Buyer Chats & Inquiries (live inquiries + defaults)
+        const liveInquiries: BuyerInquiry[] = [
             {
                 id: 'inq-1',
                 buyerName: 'Aarav Sharma',
@@ -208,7 +208,39 @@ export default function VendorDashboardPage() {
                 updatedAt: '2 hours ago',
                 buyerId: 'buyer-priya-2',
             },
-        ]);
+        ];
+
+        // Check shared conversation registry for real inquiries sent by buyers (e.g. Rishav Kumar)
+        if (typeof window !== 'undefined') {
+            try {
+                const rawRegistry = localStorage.getItem('karigar_conversations_registry');
+                if (rawRegistry) {
+                    const registered = JSON.parse(rawRegistry);
+                    if (Array.isArray(registered)) {
+                        registered.forEach((conv: any) => {
+                            const exists = liveInquiries.some(
+                                (i) => (conv.productTitle && i.productTitle.toLowerCase() === conv.productTitle.toLowerCase()) || i.id === conv.id
+                            );
+                            if (!exists) {
+                                liveInquiries.unshift({
+                                    id: conv.id || `inq-${Date.now()}`,
+                                    buyerName: conv.buyerName || 'Rishav Kumar',
+                                    productTitle: conv.productTitle || 'case',
+                                    price: conv.price || 300,
+                                    category: conv.craftCategory || 'woodworking',
+                                    status: conv.status || 'IN_DISCUSSION',
+                                    lastMessage: conv.lastMessage || `Hi! I am interested in ordering "${conv.productTitle}"`,
+                                    updatedAt: conv.lastTimestamp || 'Just now',
+                                    buyerId: conv.buyerId || 'buyer-rishav',
+                                });
+                            }
+                        });
+                    }
+                }
+            } catch (e) {}
+        }
+
+        setBuyerInquiries(liveInquiries);
 
         // 4. Fetch open commissions
         const { data: projects } = await supabase
@@ -634,7 +666,7 @@ export default function VendorDashboardPage() {
 
                                     <div className="pt-3 border-t border-[#F3EFEA] flex items-center justify-end">
                                         <Link
-                                            href={`/messages?partner=${inq.buyerId}&productTitle=${encodeURIComponent(inq.productTitle)}&price=${inq.price}`}
+                                            href={`/messages?partner=${inq.buyerId}&artisanId=${user?.id || 'raja'}&buyerName=${encodeURIComponent(inq.buyerName)}&productTitle=${encodeURIComponent(inq.productTitle)}&price=${inq.price}`}
                                             className="btn-primary text-xs py-1.5 px-3.5 flex items-center gap-1 font-semibold"
                                         >
                                             <MessageSquare className="w-3.5 h-3.5" />
