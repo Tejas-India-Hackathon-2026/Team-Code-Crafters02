@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { createClient } from '../../lib/supabaseClient';
-import { ShieldCheck, Lock, Send, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ShieldCheck, Lock, Send, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
 
 export interface BidTdsBreakdown {
     grossAmount: number;
