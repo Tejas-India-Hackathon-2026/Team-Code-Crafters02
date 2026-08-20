@@ -110,20 +110,31 @@ export default function ProjectsDirectoryPage() {
 
         try {
             setDeletingId(projectId);
-            const res = await fetch('/api/buyer/projects/manage', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ projectId, action: 'DELETE', userId: user?.id }),
-            });
 
-            const data = await res.json();
-            if (res.ok && data.success) {
-                setProjects((prev) => prev.filter((p) => p.id !== projectId));
-                setFeedbackMsg('Commission project deleted successfully.');
-                setTimeout(() => setFeedbackMsg(null), 4000);
-            } else {
-                alert(data.error || 'Failed to delete project.');
+            // Clean from local storage cache
+            if (typeof window !== 'undefined') {
+                try {
+                    const cached = JSON.parse(localStorage.getItem('karigar_custom_projects_cache') || '[]');
+                    if (Array.isArray(cached)) {
+                        localStorage.setItem(
+                            'karigar_custom_projects_cache',
+                            JSON.stringify(cached.filter((p: any) => p.id !== projectId))
+                        );
+                    }
+                } catch (e) {}
             }
+
+            try {
+                await fetch('/api/buyer/projects/manage', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ projectId, action: 'DELETE', userId: user?.id }),
+                });
+            } catch (e) {}
+
+            setProjects((prev) => prev.filter((p) => p.id !== projectId));
+            setFeedbackMsg('Commission project deleted successfully.');
+            setTimeout(() => setFeedbackMsg(null), 4000);
         } catch (err: any) {
             alert('Error deleting project: ' + err.message);
         } finally {

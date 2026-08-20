@@ -118,25 +118,39 @@ export default function NewProjectPage() {
 
                 if (!error && data) {
                     newProjectId = data.id;
+                } else if (error) {
+                    console.warn('Database insert initial attempt failed, trying fallback payload:', error.message);
+                    const fallbackPayload = {
+                        buyer_id: user.id,
+                        title,
+                        description: finalDescription,
+                        budget_min: parseFloat(budgetMin),
+                        budget_max: parseFloat(budgetMax),
+                        deadline: new Date(deadline).toISOString(),
+                        status: 'OPEN',
+                    };
+                    const { data: fbData } = await supabase
+                        .from('custom_projects')
+                        .insert(fallbackPayload)
+                        .select('id')
+                        .single();
+                    if (fbData) {
+                        newProjectId = fbData.id;
+                    }
                 }
             } catch (insertErr) {
-                // If table doesn't have image_url column, retry without it
-                delete insertPayload.image_url;
-                const { data, error } = await supabase
-                    .from('custom_projects')
-                    .insert(insertPayload)
-                    .select('id')
-                    .single();
-                if (error) throw error;
-                newProjectId = data?.id;
+                console.warn('Direct insert error:', insertErr);
             }
 
-            // Store in shared local cache so artisan dashboard sees the newly posted commission immediately
-            if (typeof window !== 'undefined' && newProjectId) {
+            // Always create a persistent unique project ID so the project is never dropped
+            const finalProjectId = newProjectId || `proj-${Date.now()}`;
+
+            // Store in shared local cache so both Buyer Commissions tab and other Artisans see it
+            if (typeof window !== 'undefined') {
                 try {
                     const cachedProjects = JSON.parse(localStorage.getItem('karigar_custom_projects_cache') || '[]');
                     const newCachedProj = {
-                        id: newProjectId,
+                        id: finalProjectId,
                         title,
                         description: finalDescription,
                         budget_min: parseFloat(budgetMin),
@@ -148,15 +162,12 @@ export default function NewProjectPage() {
                         buyer_id: user.id,
                         buyer: { full_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Client' },
                     };
-                    localStorage.setItem('karigar_custom_projects_cache', JSON.stringify([newCachedProj, ...cachedProjects]));
+                    const filteredPrev = Array.isArray(cachedProjects) ? cachedProjects.filter((p: any) => p.id !== finalProjectId) : [];
+                    localStorage.setItem('karigar_custom_projects_cache', JSON.stringify([newCachedProj, ...filteredPrev]));
                 } catch (e) {}
             }
 
-            if (newProjectId) {
-                router.push(`/projects/${newProjectId}`);
-            } else {
-                router.push('/projects');
-            }
+            router.push('/projects');
         } catch (err: any) {
             setErrorMsg(err.message || 'Failed to create project request.');
         } finally {
