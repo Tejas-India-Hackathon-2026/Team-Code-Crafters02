@@ -364,6 +364,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): JS
                     <label className="btn-ghost text-xs py-1.5 px-4 mt-3 cursor-pointer">
                         {file ? 'Change Video' : 'Choose Video File'}
                         <input
+                            id="reel-video-file-input"
                             type="file"
                             required
                             accept="video/mp4,video/quicktime,video/webm"
