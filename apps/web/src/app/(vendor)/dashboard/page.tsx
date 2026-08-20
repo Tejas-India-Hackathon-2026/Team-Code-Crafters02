@@ -783,14 +783,15 @@ export default function VendorDashboardPage() {
                                             </div>
                                         </div>
 
-                                    <div className="mt-3 pt-3 border-t border-[#F3EFEA] flex justify-end">
-                                        <button
-                                            onClick={() => setBidProjectId(proj.id)}
-                                            className="btn-primary text-xs py-1.5 px-3.5 font-semibold flex items-center gap-1"
-                                        >
-                                            <Plus className="w-3.5 h-3.5" />
-                                            <span>Submit Custom Proposal</span>
-                                        </button>
+                                        <div className="mt-3 pt-3 border-t border-[#F3EFEA] flex justify-end">
+                                            <button
+                                                onClick={() => setBidProjectId(proj.id)}
+                                                className="btn-primary text-xs py-1.5 px-3.5 font-semibold flex items-center gap-1"
+                                            >
+                                                <Plus className="w-3.5 h-3.5" />
+                                                <span>Submit Custom Proposal</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 );
                             })}
