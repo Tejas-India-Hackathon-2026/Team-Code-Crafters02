@@ -83,7 +83,42 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
                     </div>
 
                     <h1 className="text-2xl font-bold text-[#1E1B18] font-display">{project.title}</h1>
-                    <p className="text-sm text-[#6B635B] mt-2 leading-relaxed">{project.description}</p>
+                    
+                    {(() => {
+                        const refImgMatch = project.description?.match(/\[REFERENCE_IMAGE:\s*(.*?)\]/);
+                        const projImageUrl = project.image_url || (refImgMatch ? refImgMatch[1] : null);
+                        const cleanDescription = project.description?.replace(/\[REFERENCE_IMAGE:\s*(.*?)\]/, '').trim();
+
+                        return (
+                            <>
+                                {projImageUrl && (
+                                    <div className="mt-4 rounded-xl overflow-hidden border border-[#E8E2D9] bg-[#FAF8F5]">
+                                        <div className="bg-[#F3EFEA] px-3.5 py-1.5 border-b border-[#E8E2D9] flex items-center justify-between">
+                                            <span className="text-xs font-semibold text-[#1E1B18] flex items-center gap-1.5">
+                                                📷 Reference Sketch / Inspiration Photo
+                                            </span>
+                                            <a
+                                                href={projImageUrl}
+                                                target="_blank"
+                                                rel="noreferrer"
+                                                className="text-xs text-[#C85A32] font-medium hover:underline"
+                                            >
+                                                Open Full Resolution ↗
+                                            </a>
+                                        </div>
+                                        <div className="p-2 flex justify-center bg-[#1E1B18]/5">
+                                            <img
+                                                src={projImageUrl}
+                                                alt={`Reference sketch for ${project.title}`}
+                                                className="max-h-80 w-auto rounded-lg object-contain"
+                                            />
+                                        </div>
+                                    </div>
+                                )}
+                                <p className="text-sm text-[#6B635B] mt-4 leading-relaxed whitespace-pre-wrap">{cleanDescription}</p>
+                            </>
+                        );
+                    })()}
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-4 border-t border-[#E8E2D9]">
                         <div className="flex items-center gap-2">
