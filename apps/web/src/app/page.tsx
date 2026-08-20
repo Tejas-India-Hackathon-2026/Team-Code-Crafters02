@@ -43,18 +43,20 @@ export default function HomePage(): React.ReactNode {
 
                 <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative">
                     {/* Centered Top Badge & Title */}
-                    <div className="text-center max-w-3xl mx-auto mb-8">
+                    <div className="text-center max-w-4xl mx-auto mb-8">
                         <div className="inline-flex mb-4">
                             <KintoBadge variant="brand" dot={true}>
                                 AI-VERIFIED ARTISAN MARKETPLACE
                             </KintoBadge>
                         </div>
 
-                        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-stone-950 font-display leading-[1.08] tracking-tight">
-                            Handmade,{' '}
-                            <em className="animate-text-shimmer not-italic font-serif">Heart-made.</em>
-                            <br />
-                            Verified & Trusted.
+                        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-stone-950 font-display leading-[1.15] tracking-tight">
+                            <span className="whitespace-nowrap inline-block">
+                                Handmade,{' '}
+                                <em className="animate-text-shimmer not-italic font-serif">Heart-made.</em>
+                            </span>
+                            <br className="hidden sm:inline" />{' '}
+                            <span className="whitespace-nowrap inline-block">Verified &amp; Trusted.</span>
                         </h1>
 
                         {/* Kinto Editorial Divider Line */}
