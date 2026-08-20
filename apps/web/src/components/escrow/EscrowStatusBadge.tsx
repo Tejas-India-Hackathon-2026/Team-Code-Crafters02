@@ -48,7 +48,10 @@ export function resolveOrderTdsBreakdown(grossAmount: number): TdsBreakdownSumma
     };
 }
 
-/** EscrowStatusBadge renders dual-rail statutory escrow states with accessible color tokens. */
+/**
+ * EscrowStatusBadge renders dual-rail statutory escrow states with accessible color tokens,
+ * real-time pulse indicators, and Section 194-O statutory payment rails.
+ */
 export function EscrowStatusBadge({
     status,
     rail,
@@ -93,6 +96,7 @@ export function EscrowStatusBadge({
         <div className="inline-flex items-center gap-1.5 flex-wrap">
             <span
                 role="status"
+                aria-live="polite"
                 aria-label={`Escrow Status: ${current.label}`}
                 className={`inline-flex items-center gap-1.5 rounded-full font-semibold ${sizeClasses} ${current.bg} ${current.text} border border-current/15 ${className}`}
             >
