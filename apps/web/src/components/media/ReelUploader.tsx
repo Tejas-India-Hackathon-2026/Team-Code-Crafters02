@@ -31,7 +31,7 @@ const CRAFT_CATEGORIES = [
     { id: 'glasscraft', label: 'Glass & Mosaic Craft', icon: '✨' },
 ];
 
-export default function ReelUploader({ defaultCategory }: { defaultCategory?: string }) {
+export default function ReelUploader({ defaultCategory }: { defaultCategory?: string }): JSX.Element {
     const supabase = createClient();
 
     const [user, setUser] = useState<any>(null);
