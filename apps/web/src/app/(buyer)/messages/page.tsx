@@ -31,6 +31,8 @@ interface ProductDiscussion {
     avatarUrl?: string;
     status: 'IN_DISCUSSION' | 'ORDER_FINALIZED' | 'CANCELLED';
     startedAt: string;
+    projectId?: string;
+    proposalText?: string;
 }
 
 interface ConversationItem {
@@ -44,6 +46,8 @@ interface ConversationItem {
     unread: boolean;
     lastMessage: string;
     lastTimestamp: string;
+    projectId?: string;
+    proposalText?: string;
 }
 
 const DEFAULT_CONVERSATIONS: ConversationItem[] = [

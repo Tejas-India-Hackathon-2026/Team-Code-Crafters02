@@ -23,6 +23,7 @@ interface Proposal {
 
 interface ProjectProposalsListProps {
     projectId: string;
+    projectTitle?: string;
     initialBids: Proposal[];
     isOwner?: boolean;
 }
