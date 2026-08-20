@@ -254,7 +254,7 @@ export default function VendorDashboardPage() {
 
         setBuyerInquiries(liveInquiries);
 
-        // 4. Fetch open commissions
+        // 4. Fetch open commissions (combine database + local cached commissions)
         const { data: projects } = await supabase
             .from('custom_projects')
             .select('*, buyer:profiles(full_name)')
@@ -262,7 +262,20 @@ export default function VendorDashboardPage() {
             .order('created_at', { ascending: false })
             .limit(10);
 
-        setOpenProjects(projects || []);
+        let allProjects: Project[] = (projects || []) as Project[];
+
+        if (typeof window !== 'undefined') {
+            try {
+                const cached = JSON.parse(localStorage.getItem('karigar_custom_projects_cache') || '[]');
+                if (Array.isArray(cached) && cached.length > 0) {
+                    const dbIds = new Set(allProjects.map((p) => p.id));
+                    const freshCached = cached.filter((c: any) => !dbIds.has(c.id));
+                    allProjects = [...freshCached, ...allProjects];
+                }
+            } catch (e) {}
+        }
+
+        setOpenProjects(allProjects);
         setLoading(false);
     };
 
@@ -713,39 +726,62 @@ export default function VendorDashboardPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {openProjects.map((proj) => (
-                                <div
-                                    key={proj.id}
-                                    className="bg-white border border-[#E8E2D9] rounded-xl p-5 shadow-card hover:shadow-elevated transition-all flex flex-col justify-between"
-                                >
-                                    <div>
-                                        <div className="flex items-center justify-between mb-2">
-                                            <span className="text-[10px] font-bold bg-[#EDF7ED] text-[#2E7D32] px-2 py-0.5 rounded-full uppercase">
-                                                {proj.status}
-                                            </span>
-                                            <span className="text-xs font-bold text-[#C85A32] font-mono">
-                                                ₹{proj.budget_min?.toLocaleString('en-IN')} – ₹{proj.budget_max?.toLocaleString('en-IN')}
-                                            </span>
-                                        </div>
+                            {openProjects.map((proj) => {
+                                const refImgMatch = proj.description?.match(/\[REFERENCE_IMAGE:\s*(.*?)\]/);
+                                const projImageUrl = proj.image_url || (refImgMatch ? refImgMatch[1] : null);
+                                const cleanDescription = proj.description?.replace(/\[REFERENCE_IMAGE:\s*(.*?)\]/, '').trim();
 
-                                        <h3 className="font-display font-bold text-sm text-[#1E1B18] mb-1">
-                                            {proj.title}
-                                        </h3>
-                                        <p className="text-xs text-[#6B635B] line-clamp-3 leading-relaxed mb-3">
-                                            {proj.description}
-                                        </p>
+                                return (
+                                    <div
+                                        key={proj.id}
+                                        className="bg-white border border-[#E8E2D9] rounded-xl p-5 shadow-card hover:shadow-elevated transition-all flex flex-col justify-between"
+                                    >
+                                        <div>
+                                            <div className="flex items-center justify-between mb-2">
+                                                <span className="text-[10px] font-bold bg-[#EDF7ED] text-[#2E7D32] px-2 py-0.5 rounded-full uppercase">
+                                                    {proj.status}
+                                                </span>
+                                                <span className="text-xs font-bold text-[#C85A32] font-mono">
+                                                    ₹{proj.budget_min?.toLocaleString('en-IN')} – ₹{proj.budget_max?.toLocaleString('en-IN')}
+                                                </span>
+                                            </div>
 
-                                        <div className="flex items-center gap-4 text-[11px] text-[#6B635B] mb-2">
-                                            <span className="flex items-center gap-1">
-                                                <Calendar className="w-3.5 h-3.5 text-[#C85A32]" />
-                                                Deadline: {proj.deadline ? new Date(proj.deadline).toLocaleDateString() : 'Flexible'}
-                                            </span>
-                                            <span className="flex items-center gap-1">
-                                                <User className="w-3.5 h-3.5 text-[#C85A32]" />
-                                                {proj.buyer?.full_name || 'Client'}
-                                            </span>
+                                            {/* Reference Sketch / Inspiration Photo */}
+                                            {projImageUrl && (
+                                                <div className="mb-3 rounded-xl overflow-hidden border border-[#E8E2D9] bg-[#FAF8F5] relative group">
+                                                    <img
+                                                        src={projImageUrl}
+                                                        alt={`Reference sketch for ${proj.title}`}
+                                                        className="w-full h-40 object-cover group-hover:scale-105 transition-transform duration-300 cursor-pointer"
+                                                        onClick={() => window.open(projImageUrl, '_blank')}
+                                                    />
+                                                    <div className="bg-[#1E1B18]/80 backdrop-blur-xs text-white px-2.5 py-1 text-[10px] flex items-center justify-between absolute bottom-0 left-0 right-0">
+                                                        <span className="flex items-center gap-1 font-medium">
+                                                            📷 Reference Inspiration Photo
+                                                        </span>
+                                                        <span className="text-[#F7EAD9] underline cursor-pointer">Click to enlarge</span>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            <h3 className="font-display font-bold text-sm text-[#1E1B18] mb-1">
+                                                {proj.title}
+                                            </h3>
+                                            <p className="text-xs text-[#6B635B] line-clamp-3 leading-relaxed mb-3">
+                                                {cleanDescription}
+                                            </p>
+
+                                            <div className="flex items-center gap-4 text-[11px] text-[#6B635B] mb-2">
+                                                <span className="flex items-center gap-1">
+                                                    <Calendar className="w-3.5 h-3.5 text-[#C85A32]" />
+                                                    Deadline: {proj.deadline ? new Date(proj.deadline).toLocaleDateString() : 'Flexible'}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <User className="w-3.5 h-3.5 text-[#C85A32]" />
+                                                    {proj.buyer?.full_name || 'Client'}
+                                                </span>
+                                            </div>
                                         </div>
-                                    </div>
 
                                     <div className="mt-3 pt-3 border-t border-[#F3EFEA] flex justify-end">
                                         <button
