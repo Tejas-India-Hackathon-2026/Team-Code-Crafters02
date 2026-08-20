@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Receipt, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 interface QuoteCardProps {
@@ -23,6 +23,11 @@ export default function QuoteCard({
     const [milestoneTitle, setMilestoneTitle] = useState(title);
     const [grossAmount, setGrossAmount] = useState<number>(grossPrice);
     const [isCreatingQuote, setIsCreatingQuote] = useState(false);
+
+    useEffect(() => {
+        if (title) setMilestoneTitle(title);
+        if (grossPrice) setGrossAmount(grossPrice);
+    }, [title, grossPrice]);
 
     // Section 194-O TDS calculation (1%)
     const tdsWithheld = Math.round(grossAmount * 0.01);
