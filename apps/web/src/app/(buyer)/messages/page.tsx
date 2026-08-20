@@ -88,7 +88,7 @@ function MessagesContent() {
     const [conversationsList, setConversationsList] = useState<ConversationItem[]>(DEFAULT_CONVERSATIONS);
 
     // 1. Ingest URL params for product inquiry
-    const paramArtisanId = searchParams.get('artisanId');
+    const paramArtisanId = searchParams.get('artisanId') || searchParams.get('partner') || searchParams.get('vendorId') || searchParams.get('buyerId');
     const paramReelId = searchParams.get('reelId');
     const paramProductTitle = searchParams.get('productTitle');
     const paramPrice = searchParams.get('price');
@@ -101,21 +101,48 @@ function MessagesContent() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const { data: profile } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-                setUserProfile(profile || { id: user.id, full_name: user.email?.split('@')[0], is_vendor: false });
+                const currentProf = profile || { id: user.id, full_name: user.email?.split('@')[0], is_vendor: false };
+                setUserProfile(currentProf);
 
-                const { data: convs } = await supabase.from('conversations').select('id').limit(1);
-                if (convs && convs.length > 0) {
-                    setActiveConversationId(convs[0].id);
+                // Load registered conversations from shared registry
+                const rawRegistry = typeof window !== 'undefined' ? localStorage.getItem('karigar_conversations_registry') : null;
+                if (rawRegistry) {
+                    try {
+                        const registered = JSON.parse(rawRegistry);
+                        if (Array.isArray(registered) && registered.length > 0) {
+                            setConversationsList((prev) => {
+                                const regIds = new Set(registered.map((r: any) => r.id));
+                                const filtered = prev.filter((p) => !regIds.has(p.id));
+                                return [...registered, ...filtered];
+                            });
+
+                            // Auto-select latest active conversation if no URL param
+                            if (!paramArtisanId) {
+                                setActiveConversationId(registered[0].id);
+                                setActiveDiscussion({
+                                    artisanId: registered[0].artisanId,
+                                    artisanName: registered[0].artisanName,
+                                    reelId: 'reel-registered',
+                                    productTitle: registered[0].productTitle,
+                                    price: registered[0].price,
+                                    category: registered[0].craftCategory,
+                                    avatarUrl: registered[0].avatarUrl,
+                                    status: 'IN_DISCUSSION',
+                                    startedAt: new Date().toISOString(),
+                                });
+                            }
+                        }
+                    } catch (e) {}
                 }
             }
         };
         initChat();
-    }, []);
+    }, [paramArtisanId]);
 
     // 2. Manage 1-Product-at-a-Time Discussion Constraint & Conversation List
     useEffect(() => {
         if (!paramArtisanId || !paramProductTitle) {
-            // Default active discussion to first item
+            // Default active discussion to first item if not set
             if (!activeDiscussion && conversationsList.length > 0) {
                 const defaultItem = conversationsList[0];
                 setActiveDiscussion({
@@ -153,29 +180,36 @@ function MessagesContent() {
         const targetConvId = `conv-${paramArtisanId}`;
         setActiveConversationId(targetConvId);
 
-        // Add or update in conversations list
+        const newItem: ConversationItem = {
+            id: targetConvId,
+            artisanId: paramArtisanId,
+            artisanName: incomingDiscussion.artisanName,
+            craftCategory: incomingDiscussion.category,
+            avatarUrl: incomingDiscussion.avatarUrl!,
+            productTitle: paramProductTitle,
+            price: incomingDiscussion.price,
+            unread: true,
+            lastMessage: `Inquiry for ${paramProductTitle}`,
+            lastTimestamp: 'Just now',
+        };
+
+        // Add or update in conversations list and persistent registry
         setConversationsList((prev) => {
             const exists = prev.find((c) => c.artisanId === paramArtisanId || c.id === targetConvId);
-            if (exists) {
-                return prev.map((c) =>
-                    c.id === exists.id
-                        ? { ...c, productTitle: paramProductTitle, price: incomingDiscussion.price }
-                        : c
-                );
+            const updated = exists
+                ? prev.map((c) =>
+                      c.id === exists.id
+                          ? { ...c, productTitle: paramProductTitle, price: incomingDiscussion.price }
+                          : c
+                  )
+                : [newItem, ...prev];
+
+            if (typeof window !== 'undefined') {
+                try {
+                    localStorage.setItem('karigar_conversations_registry', JSON.stringify(updated.slice(0, 10)));
+                } catch (e) {}
             }
-            const newItem: ConversationItem = {
-                id: targetConvId,
-                artisanId: paramArtisanId,
-                artisanName: incomingDiscussion.artisanName,
-                craftCategory: incomingDiscussion.category,
-                avatarUrl: incomingDiscussion.avatarUrl!,
-                productTitle: paramProductTitle,
-                price: incomingDiscussion.price,
-                unread: true,
-                lastMessage: `Inquiry for ${paramProductTitle}`,
-                lastTimestamp: 'Just now',
-            };
-            return [newItem, ...prev];
+            return updated;
         });
 
         // If an active discussion already exists for this artisan on a DIFFERENT product
