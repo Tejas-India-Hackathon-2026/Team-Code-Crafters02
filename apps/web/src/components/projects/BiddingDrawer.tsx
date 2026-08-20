@@ -4,10 +4,29 @@ import { useState } from 'react';
 import { createClient } from '../../lib/supabaseClient';
 import { ShieldCheck, Lock, Send } from 'lucide-react';
 
-interface BiddingDrawerProps {
+export interface BidTdsBreakdown {
+    grossAmount: number;
+    tdsWithholding: number;
+    makerNetPayout: number;
+    effectiveRate: string;
+}
+
+export interface BidFormState {
+    bidAmount: string;
+    proposalText: string;
+    estimatedDays: string;
+    loading: boolean;
+    statusMsg: string | null;
+    statusType: 'success' | 'error' | 'info' | null;
+}
+
+export interface BiddingDrawerProps {
     projectId: string;
     isVendor: boolean;
     isVerified: boolean;
+    projectTitle?: string;
+    minBudget?: number;
+    maxBudget?: number;
     onBidSubmitted?: () => void;
 }
 
