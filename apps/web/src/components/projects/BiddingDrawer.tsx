@@ -1,0 +1,134 @@
+'use client';
+
+import { useState } from 'react';
+import { createClient } from '../../lib/supabaseClient';
+import { ShieldCheck, Lock, Send } from 'lucide-react';
+
+interface BiddingDrawerProps {
+    projectId: string;
+    isVendor: boolean;
+    isVerified: boolean;
+    onBidSubmitted?: () => void;
+}
+
+export default function BiddingDrawer({
+    projectId,
+    isVendor,
+    isVerified,
+    onBidSubmitted,
+}: BiddingDrawerProps) {
+    const supabase = createClient();
+    const [bidAmount, setBidAmount] = useState('');
+    const [proposalText, setProposalText] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [statusMsg, setStatusMsg] = useState('');
+
+    const handleBidSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setStatusMsg('');
+
+        if (!isVendor || !isVerified) {
+            setStatusMsg('Only AI-verified artisans can place bids on projects.');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Unauthorized');
+
+            const { error } = await supabase.from('project_bids').insert({
+                project_id: projectId,
+                vendor_id: user.id,
+                bid_amount: parseFloat(bidAmount),
+                proposal_text: proposalText,
+                status: 'PENDING',
+            });
+
+            if (error) throw error;
+
+            setStatusMsg('Bid proposal submitted successfully!');
+            setBidAmount('');
+            setProposalText('');
+            if (onBidSubmitted) onBidSubmitted();
+        } catch (err: any) {
+            setStatusMsg(`Error: ${err.message}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    if (!isVendor) {
+        return (
+            <div className="p-4 bg-[#FDFBF7] border border-[#E8E2D9] rounded-xl text-center">
+                <p className="text-xs text-[#6B635B]">
+                    You are currently viewing this project as a buyer. Switch to an artisan profile to submit a bid.
+                </p>
+            </div>
+        );
+    }
+
+    if (!isVerified) {
+        return (
+            <div className="p-4 bg-[#FFF4E5] border border-[#ED6C02]/20 rounded-xl text-center flex flex-col items-center">
+                <Lock className="w-5 h-5 text-[#ED6C02] mb-1" />
+                <p className="text-xs font-medium text-[#ED6C02]">Artisan Verification Required</p>
+                <p className="text-[11px] text-[#6B635B] mt-1">
+                    You must complete the video reel verification before submitting bids on custom projects.
+                </p>
+            </div>
+        );
+    }
+
+    return (
+        <div className="p-5 bg-white border border-[#E8E2D9] rounded-xl shadow-sm">
+            <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck className="w-5 h-5 text-[#2C4A3E]" />
+                <h3 className="font-semibold text-sm text-[#1E1B18]">Submit Artisan Commission Proposal</h3>
+            </div>
+
+            {statusMsg && (
+                <p className="text-xs mb-3 text-[#C85A32] font-medium">{statusMsg}</p>
+            )}
+
+            <form onSubmit={handleBidSubmit} className="flex flex-col gap-3">
+                <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#1E1B18] mb-1">
+                        Your Proposed Price (INR)
+                    </label>
+                    <input
+                        type="number"
+                        required
+                        placeholder="e.g., 12000"
+                        value={bidAmount}
+                        onChange={(e) => setBidAmount(e.target.value)}
+                        className="w-full h-9 px-3 border border-[#E8E2D9] rounded-lg text-xs outline-none focus:border-[#C85A32]"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-[11px] font-semibold uppercase text-[#1E1B18] mb-1">
+                        Crafting Proposal & Timeline Details
+                    </label>
+                    <textarea
+                        required
+                        rows={3}
+                        placeholder="Detail your production process, timber selection, and expected dispatch timeline..."
+                        value={proposalText}
+                        onChange={(e) => setProposalText(e.target.value)}
+                        className="w-full p-2.5 border border-[#E8E2D9] rounded-lg text-xs outline-none focus:border-[#C85A32]"
+                    />
+                </div>
+
+                <button
+                    type="submit"
+                    disabled={loading}
+                    className="bg-[#2C4A3E] text-white hover:bg-[#223B31] py-2 px-4 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all active:scale-[0.98] disabled:opacity-60"
+                >
+                    <Send className="w-3.5 h-3.5" />
+                    {loading ? 'Submitting Bid...' : 'Submit Confidential Bid'}
+                </button>
+            </form>
+        </div>
+    );
+}

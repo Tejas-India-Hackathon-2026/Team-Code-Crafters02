@@ -1,0 +1,251 @@
+@import "tailwindcss";
+
+/* ── Design Tokens for Tailwind CSS v4 ──────────────── */
+@theme {
+  --font-display: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --color-primary: #C85A32;
+  --color-primary-hover: #B04B26;
+  --color-primary-foreground: #FFFFFF;
+
+  --color-secondary: #2C4A3E;
+  --color-secondary-hover: #223B31;
+  --color-secondary-foreground: #FFFFFF;
+
+  --color-accent: #E08E45;
+  --color-accent-muted: #F7EAD9;
+
+  --color-background: #FDFBF7;
+  --color-card: #FFFFFF;
+  --color-card-foreground: #1E1B18;
+
+  --color-muted: #F3EFEA;
+  --color-muted-foreground: #6B635B;
+
+  --color-border: #E8E2D9;
+
+  --color-success: #2E7D32;
+  --color-success-bg: #EDF7ED;
+
+  --color-warning: #ED6C02;
+  --color-warning-bg: #FFF4E5;
+
+  --color-error: #D32F2F;
+  --color-error-bg: #FDEDED;
+  --color-error-border: #F5C2C7;
+
+  --shadow-card: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-elevated: 0 4px 16px rgba(0,0,0,0.08);
+  --shadow-modal: 0 12px 40px rgba(0,0,0,0.15);
+
+  --radius-card: 0.75rem;
+  --radius-pill: 9999px;
+}
+
+/* ── Base Styles ────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-body, system-ui, sans-serif);
+  background-color: #FDFBF7;
+  color: #1E1B18;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display, system-ui, sans-serif);
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+
+code, pre, .font-mono {
+  font-family: var(--font-mono, ui-monospace, monospace);
+}
+
+/* ── Focus & Accessibility ──────────────────────────── */
+*:focus-visible {
+  outline: 2px solid #C85A32;
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ── Custom Scrollbar ───────────────────────────────── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #F3EFEA;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #E8E2D9;
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6B635B;
+}
+
+/* ── Selection ──────────────────────────────────────── */
+::selection {
+  background-color: #F7EAD9;
+  color: #1E1B18;
+}
+
+/* ── Keyframes & Animations ─────────────────────────── */
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes pulseSubtle {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.25s ease-out both;
+}
+
+.animate-pulse-subtle {
+  animation: pulseSubtle 2s ease-in-out infinite;
+}
+
+/* ── Card Component Classes ─────────────────────────── */
+.card {
+  background: #FFFFFF;
+  border: 1px solid #E8E2D9;
+  border-radius: 0.75rem;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+}
+
+.card-elevated {
+  background: #FFFFFF;
+  border: 1px solid #E8E2D9;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+}
+
+/* ── Input Base ─────────────────────────────────────── */
+.input-base {
+  width: 100%;
+  height: 2.75rem;
+  padding-left: 0.875rem;
+  padding-right: 0.875rem;
+  border: 1px solid #E8E2D9;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-family: var(--font-body, system-ui, sans-serif);
+  color: #1E1B18;
+  background: #FFFFFF;
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.input-base::placeholder {
+  color: #6B635B;
+}
+
+.input-base:focus {
+  border-color: #C85A32;
+  box-shadow: 0 0 0 3px rgba(200, 90, 50, 0.12);
+}
+
+/* ── Button Classes ─────────────────────────────────── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body, system-ui, sans-serif);
+  color: #FFFFFF;
+  background: #C85A32;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  text-decoration: none;
+}
+
+.btn-primary:hover {
+  background: #B04B26;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: var(--font-body, system-ui, sans-serif);
+  color: #FFFFFF;
+  background: #2C4A3E;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.1s ease;
+  text-decoration: none;
+}
+
+.btn-secondary:hover {
+  background: #223B31;
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.375rem;
+  padding: 0.625rem 1.25rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  font-family: var(--font-body, system-ui, sans-serif);
+  color: #1E1B18;
+  background: transparent;
+  border: 1px solid #E8E2D9;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s ease, border-color 0.2s ease;
+  text-decoration: none;
+}
+
+.btn-ghost:hover {
+  background: #F3EFEA;
+  border-color: #6B635B;
+}
