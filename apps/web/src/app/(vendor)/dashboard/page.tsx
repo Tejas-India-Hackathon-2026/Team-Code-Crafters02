@@ -792,8 +792,8 @@ export default function VendorDashboardPage() {
                                             <span>Submit Custom Proposal</span>
                                         </button>
                                     </div>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
                     </div>
                 )}
