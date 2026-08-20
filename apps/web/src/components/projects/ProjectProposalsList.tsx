@@ -53,8 +53,9 @@ export function ProjectProposalsList({
 
         if (typeof window !== 'undefined') {
             try {
+                localStorage.removeItem(`active_discussion_${vendorId}`);
                 const currentRegistry = JSON.parse(localStorage.getItem('karigar_conversations_registry') || '[]');
-                const convId = `conv-${vendorId}`;
+                const convId = `conv-${vendorId}-${projectId}`;
                 const newConv = {
                     id: convId,
                     artisanId: vendorId,
@@ -65,14 +66,14 @@ export function ProjectProposalsList({
                         'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
                     productTitle: title,
                     price: price,
-                    unread: true,
+                    unread: false,
                     lastMessage: `Proposal for "${title}": ₹${price.toLocaleString('en-IN')}`,
                     lastTimestamp: 'Just now',
                     projectId: projectId,
                     proposalText: cleanText,
                 };
                 const filtered = Array.isArray(currentRegistry)
-                    ? currentRegistry.filter((c: any) => c.id !== convId && c.artisanId !== vendorId)
+                    ? currentRegistry.filter((c: any) => c.id !== convId && c.id !== 'conv-case-raja' && c.productTitle?.toLowerCase() !== 'case')
                     : [];
                 localStorage.setItem('karigar_conversations_registry', JSON.stringify([newConv, ...filtered]));
             } catch (e) {}

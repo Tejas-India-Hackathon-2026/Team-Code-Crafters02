@@ -134,8 +134,8 @@ function MessagesContent() {
                     } catch (e) {}
                 }
 
-                // If none in registry yet, inject Rishav's inquiry for Raja's handcrafted case
-                if (registered.length === 0 || !registered.some((c) => c.productTitle?.toLowerCase().includes('case'))) {
+                // If none in registry yet, seed initial conversation
+                if (registered.length === 0) {
                     const defaultInquiry: ConversationItem = {
                         id: 'conv-case-raja',
                         artisanId: user.id,
@@ -148,7 +148,7 @@ function MessagesContent() {
                         lastMessage: 'Hi! I am interested in ordering this verified handcrafted product: "case" (₹300).',
                         lastTimestamp: 'Just now',
                     };
-                    registered.unshift(defaultInquiry);
+                    registered.push(defaultInquiry);
                 }
 
                 setConversationsList((prev) => {
@@ -161,16 +161,19 @@ function MessagesContent() {
                 if (!paramArtisanId && registered.length > 0) {
                     const activeItem = registered[0];
                     setActiveConversationId(activeItem.id);
+                    const isCommission = activeItem.craftCategory?.toLowerCase().includes('commission') || !!activeItem.projectId;
                     setActiveDiscussion({
                         artisanId: activeItem.artisanId,
                         artisanName: activeItem.artisanName,
-                        reelId: 'reel-case',
+                        reelId: 'reel-0',
                         productTitle: activeItem.productTitle,
                         price: activeItem.price,
-                        category: activeItem.craftCategory,
+                        category: isCommission ? 'custom_commission' : activeItem.craftCategory,
                         avatarUrl: activeItem.avatarUrl,
                         status: 'IN_DISCUSSION',
                         startedAt: new Date().toISOString(),
+                        projectId: activeItem.projectId,
+                        proposalText: activeItem.proposalText,
                     });
                 }
             }
@@ -218,7 +221,7 @@ function MessagesContent() {
             proposalText: paramProposalText || undefined,
         };
 
-        const targetConvId = `conv-${paramArtisanId}`;
+        const targetConvId = paramProjectId ? `conv-${paramArtisanId}-${paramProjectId}` : `conv-${paramArtisanId}`;
         setActiveConversationId(targetConvId);
 
         const newItem: ConversationItem = {
@@ -229,7 +232,7 @@ function MessagesContent() {
             avatarUrl: incomingDiscussion.avatarUrl!,
             productTitle: paramProductTitle,
             price: incomingDiscussion.price,
-            unread: true,
+            unread: false,
             lastMessage: paramProposalText ? `Proposal note: "${paramProposalText}"` : `Inquiry for ${paramProductTitle}`,
             lastTimestamp: 'Just now',
             projectId: paramProjectId || undefined,
@@ -238,14 +241,14 @@ function MessagesContent() {
 
         // Add or update in conversations list and persistent registry
         setConversationsList((prev) => {
-            const exists = prev.find((c) => c.artisanId === paramArtisanId || c.id === targetConvId);
+            const exists = prev.find((c) => c.id === targetConvId || (paramCategory === 'custom_commission' && c.projectId && c.projectId === paramProjectId));
             const updated = exists
                 ? prev.map((c) =>
                       c.id === exists.id
-                          ? { ...c, productTitle: paramProductTitle, price: incomingDiscussion.price }
+                          ? { ...c, productTitle: paramProductTitle, price: incomingDiscussion.price, lastMessage: newItem.lastMessage }
                           : c
                   )
-                : [newItem, ...prev];
+                : [newItem, ...prev.filter((c) => c.id !== targetConvId)];
 
             if (typeof window !== 'undefined') {
                 try {
@@ -255,27 +258,33 @@ function MessagesContent() {
             return updated;
         });
 
-        // If an active discussion already exists for this artisan on a DIFFERENT product
-        if (existing && existing.status === 'IN_DISCUSSION' && existing.productTitle !== incomingDiscussion.productTitle) {
+        // If category is custom_commission OR no conflict exists, activate immediately!
+        if (paramCategory === 'custom_commission' || !existing || existing.status !== 'IN_DISCUSSION' || existing.productTitle === incomingDiscussion.productTitle) {
+            setActiveDiscussion(incomingDiscussion);
+            setShowConflictModal(false);
+            setBlockedAttempt(null);
+            if (typeof window !== 'undefined') {
+                localStorage.setItem(storageKey, JSON.stringify(incomingDiscussion));
+            }
+
+            if (!inputText) {
+                if (paramCategory === 'custom_commission') {
+                    setInputText(
+                        `Hi! I reviewed your verified custom commission proposal for "${incomingDiscussion.productTitle}" (₹${incomingDiscussion.price.toLocaleString('en-IN')}). Can we discuss milestones and final delivery details?`
+                    );
+                } else {
+                    setInputText(
+                        `Hi! I am interested in ordering this verified handcrafted product: "${incomingDiscussion.productTitle}"${incomingDiscussion.price ? ` (₹${incomingDiscussion.price.toLocaleString('en-IN')})` : ''}. Can you please confirm customization options and delivery schedule?`
+                    );
+                }
+            }
+        } else {
+            // Standard reel inquiry conflict
             setBlockedAttempt(incomingDiscussion);
             setActiveDiscussion(existing);
             setShowConflictModal(true);
-        } else {
-            // Set as active discussion
-            const current = existing && existing.status === 'IN_DISCUSSION' ? existing : incomingDiscussion;
-            setActiveDiscussion(current);
-            if (typeof window !== 'undefined') {
-                localStorage.setItem(storageKey, JSON.stringify(current));
-            }
-
-            // Pre-populate default inquiry if input is empty
-            if (!inputText) {
-                setInputText(
-                    `Hi! I am interested in ordering this verified handcrafted product: "${current.productTitle}"${current.price ? ` (₹${current.price.toLocaleString('en-IN')})` : ''}. Can you please confirm customization options and delivery schedule?`
-                );
-            }
         }
-    }, [paramArtisanId, paramProductTitle, paramPrice, paramCategory, paramVendorName]);
+    }, [paramArtisanId, paramProductTitle, paramPrice, paramCategory, paramVendorName, paramProjectId, paramProposalText]);
 
     const { messages, sendMessage, isConnected, warningBanner } = useWebSockets(activeConversationId);
 
@@ -314,31 +323,85 @@ function MessagesContent() {
     const handleCancelDiscussion = () => {
         if (!activeDiscussion) return;
 
-        const updated: ProductDiscussion = {
-            ...activeDiscussion,
-            status: 'CANCELLED',
-        };
-        setActiveDiscussion(updated);
+        const artisanId = activeDiscussion.artisanId;
+        const currentTitle = activeDiscussion.productTitle;
+        const currentConvId = activeConversationId;
+
         if (typeof window !== 'undefined') {
-            localStorage.setItem(`active_discussion_${updated.artisanId}`, JSON.stringify(updated));
+            localStorage.removeItem(`active_discussion_${artisanId}`);
+            try {
+                const currentRegistry = JSON.parse(localStorage.getItem('karigar_conversations_registry') || '[]');
+                const filtered = Array.isArray(currentRegistry)
+                    ? currentRegistry.filter((c: any) => c.id !== currentConvId && c.productTitle !== currentTitle)
+                    : [];
+                localStorage.setItem('karigar_conversations_registry', JSON.stringify(filtered));
+                setConversationsList(filtered.length > 0 ? filtered : DEFAULT_CONVERSATIONS);
+                if (filtered.length > 0) {
+                    handleSelectConversation(filtered[0]);
+                } else {
+                    setActiveDiscussion(null);
+                }
+            } catch (e) {}
         }
 
         sendMessage(
-            `[COMMAND: DISCUSSION_CLOSED] ✕ I have closed the inquiry for "${updated.productTitle}". Ready to start a new discussion.`
+            `[COMMAND: DISCUSSION_CLOSED] ✕ I have closed the inquiry for "${currentTitle}". Ready to start a new discussion.`
         );
     };
 
     // Switch to new product after resolving conflict
     const handleSwitchToNewProduct = () => {
         if (!blockedAttempt) return;
+        const targetId = blockedAttempt.projectId
+            ? `conv-${blockedAttempt.artisanId}-${blockedAttempt.projectId}`
+            : `conv-${blockedAttempt.artisanId}`;
+        setActiveConversationId(targetId);
         setActiveDiscussion(blockedAttempt);
+
         if (typeof window !== 'undefined') {
             localStorage.setItem(`active_discussion_${blockedAttempt.artisanId}`, JSON.stringify(blockedAttempt));
+            try {
+                const currentRegistry = JSON.parse(localStorage.getItem('karigar_conversations_registry') || '[]');
+                const newConv = {
+                    id: targetId,
+                    artisanId: blockedAttempt.artisanId,
+                    artisanName: blockedAttempt.artisanName,
+                    craftCategory:
+                        blockedAttempt.category === 'custom_commission'
+                            ? `Commission: ${blockedAttempt.productTitle}`
+                            : blockedAttempt.category,
+                    avatarUrl:
+                        blockedAttempt.avatarUrl ||
+                        'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+                    productTitle: blockedAttempt.productTitle,
+                    price: blockedAttempt.price,
+                    unread: false,
+                    lastMessage: blockedAttempt.proposalText
+                        ? `Proposal note: "${blockedAttempt.proposalText}"`
+                        : `Inquiry for ${blockedAttempt.productTitle}`,
+                    lastTimestamp: 'Just now',
+                    projectId: blockedAttempt.projectId,
+                    proposalText: blockedAttempt.proposalText,
+                };
+                const filtered = Array.isArray(currentRegistry)
+                    ? currentRegistry.filter(
+                          (c: any) =>
+                              c.productTitle?.toLowerCase() !== 'case' &&
+                              c.id !== 'conv-case-raja' &&
+                              c.id !== targetId
+                      )
+                    : [];
+                const updated = [newConv, ...filtered];
+                localStorage.setItem('karigar_conversations_registry', JSON.stringify(updated));
+                setConversationsList(updated);
+            } catch (e) {}
         }
         setShowConflictModal(false);
         setBlockedAttempt(null);
         setInputText(
-            `Hi! I have started a new inquiry for "${blockedAttempt.productTitle}" (₹${blockedAttempt.price.toLocaleString('en-IN')}). Could you share the maker details and dispatch timeline?`
+            `Hi! I have started a new inquiry for "${blockedAttempt.productTitle}" (₹${blockedAttempt.price.toLocaleString(
+                'en-IN'
+            )}). Could you share the maker details and dispatch timeline?`
         );
     };
 
@@ -372,17 +435,24 @@ function MessagesContent() {
 
     const handleSelectConversation = (conv: ConversationItem) => {
         setActiveConversationId(conv.id);
-        setActiveDiscussion({
+        const isCommission = conv.craftCategory?.toLowerCase().includes('commission') || !!conv.projectId;
+        const newDiscussion: ProductDiscussion = {
             artisanId: conv.artisanId,
             artisanName: conv.artisanName,
             reelId: 'reel-0',
             productTitle: conv.productTitle,
             price: conv.price,
-            category: conv.craftCategory,
+            category: isCommission ? 'custom_commission' : conv.craftCategory,
             avatarUrl: conv.avatarUrl,
             status: 'IN_DISCUSSION',
             startedAt: new Date().toISOString(),
-        });
+            projectId: conv.projectId,
+            proposalText: conv.proposalText,
+        };
+        setActiveDiscussion(newDiscussion);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem(`active_discussion_${conv.artisanId}`, JSON.stringify(newDiscussion));
+        }
         setConversationsList((prev) =>
             prev.map((c) => (c.id === conv.id ? { ...c, unread: false } : c))
         );
@@ -413,13 +483,13 @@ function MessagesContent() {
                         <div className="flex flex-col gap-2.5">
                             <button
                                 onClick={() => setShowConflictModal(false)}
-                                className="btn-primary text-xs py-2.5 w-full font-semibold"
+                                className="btn-primary text-xs py-2.5 w-full font-semibold cursor-pointer"
                             >
                                 Continue Discussing "{activeDiscussion.productTitle}"
                             </button>
                             <button
                                 onClick={handleSwitchToNewProduct}
-                                className="btn-ghost text-xs py-2.5 w-full font-semibold text-[#D32F2F] hover:bg-[#FDEDED]"
+                                className="btn-ghost text-xs py-2.5 w-full font-semibold text-[#D32F2F] hover:bg-[#FDEDED] cursor-pointer"
                             >
                                 Close Current & Switch to "{blockedAttempt.productTitle}"
                             </button>
@@ -446,9 +516,7 @@ function MessagesContent() {
                     {/* Conversation List */}
                     <div className="flex-1 overflow-y-auto divide-y divide-[#F3EFEA]">
                         {conversationsList.map((conv) => {
-                            const isSelected =
-                                activeDiscussion?.artisanId === conv.artisanId ||
-                                activeConversationId === conv.id;
+                            const isSelected = activeConversationId === conv.id;
 
                             return (
                                 <button
