@@ -1,31 +1,35 @@
 'use client';
 
 import { useState } from 'react';
-import { Receipt, ArrowRight } from 'lucide-react';
+import { Receipt, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 
 interface QuoteCardProps {
-    isVendor: boolean;
-    isVerified: boolean;
+    isVendor?: boolean;
+    isVerified?: boolean;
+    title?: string;
+    grossPrice?: number;
     onAcceptAndFund?: (grossAmount: number, tdsAmount: number, netAmount: number) => void;
     onSendQuoteMessage?: (quoteText: string) => void;
 }
 
 export default function QuoteCard({
-    isVendor,
-    isVerified,
+    isVendor = false,
+    isVerified = false,
+    title = 'Custom Bridal Katan Silk Saree (6.3m)',
+    grossPrice = 24500,
     onAcceptAndFund,
     onSendQuoteMessage,
 }: QuoteCardProps) {
-    const [milestoneTitle, setMilestoneTitle] = useState('Full Commission Delivery');
-    const [grossAmount, setGrossAmount] = useState<number>(10000);
+    const [milestoneTitle, setMilestoneTitle] = useState(title);
+    const [grossAmount, setGrossAmount] = useState<number>(grossPrice);
     const [isCreatingQuote, setIsCreatingQuote] = useState(false);
 
     // Section 194-O TDS calculation (1%)
-    const tdsWithheld = grossAmount * 0.01;
+    const tdsWithheld = Math.round(grossAmount * 0.01);
     const netPayout = grossAmount - tdsWithheld;
 
     const handleEmitQuote = () => {
-        const quotePayload = `[QUOTE_PROPOSAL] Milestone: "${milestoneTitle}" | Gross: ₹${grossAmount} | TDS (1% Sec 194-O): ₹${tdsWithheld} | Net: ₹${netPayout}`;
+        const quotePayload = `[QUOTE_PROPOSAL] Milestone: "${milestoneTitle}" | Gross: ₹${grossAmount.toLocaleString('en-IN')} | TDS (1% Sec 194-O): ₹${tdsWithheld.toLocaleString('en-IN')} | Net: ₹${netPayout.toLocaleString('en-IN')}`;
         if (onSendQuoteMessage) {
             onSendQuoteMessage(quotePayload);
         }
@@ -33,76 +37,85 @@ export default function QuoteCard({
     };
 
     return (
-        <div className="bg-[#FDFBF7] border-2 border-[#C85A32]/30 rounded-xl p-4 my-3 shadow-sm max-w-md">
-            <div className="flex items-center justify-between border-b border-[#E8E2D9] pb-2 mb-3">
-                <div className="flex items-center gap-1.5">
-                    <Receipt className="w-4 h-4 text-[#C85A32]" />
-                    <span className="font-semibold text-xs text-[#1E1B18]">Maker Milestone Quote Proposal</span>
-                </div>
-                <span className="text-[10px] uppercase font-semibold text-[#2C4A3E] bg-[#EDF7ED] px-2 py-0.5 rounded">
-                    Dual-Rail Escrow Ready
+        <div className="bg-white border border-[#E8E2D9] rounded-2xl p-5 shadow-sm w-full max-w-lg animate-fade-in text-[#1E1B18]">
+            {/* Header with badges */}
+            <div className="flex items-center justify-between pb-2 mb-3">
+                <span className="text-[11px] font-bold tracking-wider text-[#6B635B] uppercase font-mono">
+                    FORMAL MAKER QUOTE
+                </span>
+                <span className="text-[10px] uppercase font-bold text-white bg-[#2C4A3E] px-2.5 py-0.5 rounded-full tracking-wider flex items-center gap-1 shadow-xs">
+                    <ShieldCheck className="w-3 h-3" />
+                    ESCROW READY
                 </span>
             </div>
 
             {isCreatingQuote && isVendor && isVerified ? (
-                <div className="flex flex-col gap-2.5">
+                <div className="flex flex-col gap-3">
                     <div>
-                        <label className="text-[11px] font-medium text-[#6B635B] block mb-1">Milestone Description</label>
+                        <label className="text-[11px] font-semibold text-[#6B635B] block mb-1">Custom Craft Title & Specs</label>
                         <input
                             type="text"
                             value={milestoneTitle}
                             onChange={(e) => setMilestoneTitle(e.target.value)}
-                            className="w-full h-8 px-2.5 border border-[#E8E2D9] rounded-lg text-xs outline-none focus:border-[#C85A32]"
+                            className="w-full h-9 px-3 border border-[#E8E2D9] rounded-xl text-xs outline-none focus:border-[#C85A32]"
+                            placeholder="e.g. Custom Bridal Katan Silk Saree (6.3m)"
                         />
                     </div>
                     <div>
-                        <label className="text-[11px] font-medium text-[#6B635B] block mb-1">Gross Price (INR)</label>
+                        <label className="text-[11px] font-semibold text-[#6B635B] block mb-1">Gross Price (INR)</label>
                         <input
                             type="number"
                             value={grossAmount}
                             onChange={(e) => setGrossAmount(Number(e.target.value))}
-                            className="w-full h-8 px-2.5 border border-[#E8E2D9] rounded-lg text-xs outline-none focus:border-[#C85A32]"
+                            className="w-full h-9 px-3 border border-[#E8E2D9] rounded-xl text-xs outline-none focus:border-[#C85A32]"
                         />
                     </div>
                     <button
                         onClick={handleEmitQuote}
-                        className="w-full bg-[#C85A32] text-white hover:bg-[#B04B26] py-1.5 rounded-lg text-xs font-medium transition-all"
+                        className="w-full bg-[#C85A32] text-white hover:bg-[#B04B26] py-2 rounded-xl text-xs font-semibold transition-all shadow-sm"
                     >
                         Post Quote to Chat
                     </button>
                 </div>
             ) : (
-                <div className="flex flex-col gap-2">
-                    <div className="flex justify-between text-xs text-[#1E1B18]">
-                        <span>Gross Commission Amount:</span>
-                        <span className="font-semibold">₹{grossAmount.toLocaleString('en-IN')}</span>
+                <div className="flex flex-col gap-3">
+                    <h3 className="font-display font-bold text-sm sm:text-base text-[#1E1B18]">
+                        {milestoneTitle}
+                    </h3>
+
+                    {/* Breakdown Box */}
+                    <div className="bg-[#FAF8F5] rounded-xl p-3.5 flex flex-col gap-2 border border-[#F3EFEA]">
+                        <div className="flex justify-between items-center text-xs text-[#6B635B]">
+                            <span>Gross Amount</span>
+                            <span className="font-bold text-[#1E1B18] font-mono">₹{grossAmount.toLocaleString('en-IN')}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-xs text-[#D32F2F]">
+                            <span>1% TDS (Section 194-O)</span>
+                            <span className="font-bold font-mono">-₹{tdsWithheld.toLocaleString('en-IN')}</span>
+                        </div>
+
+                        <div className="flex justify-between items-center text-xs font-bold text-[#1E1B18] pt-2 border-t border-[#E8E2D9]">
+                            <span>Maker Net Payout</span>
+                            <span className="font-mono text-[#2E7D32]">₹{netPayout.toLocaleString('en-IN')}</span>
+                        </div>
                     </div>
 
-                    <div className="flex justify-between text-xs text-[#ED6C02]">
-                        <span>Section 194-O TDS (1%):</span>
-                        <span>- ₹{tdsWithheld.toLocaleString('en-IN')}</span>
-                    </div>
-
-                    <div className="flex justify-between text-xs font-bold text-[#2C4A3E] pt-2 border-t border-[#E8E2D9]">
-                        <span>Net Artisan Payout:</span>
-                        <span>₹{netPayout.toLocaleString('en-IN')}</span>
-                    </div>
-
-                    <div className="mt-3 flex gap-2">
+                    <div className="mt-1">
                         {isVendor && isVerified ? (
                             <button
                                 onClick={() => setIsCreatingQuote(true)}
-                                className="w-full border border-[#E8E2D9] bg-white hover:bg-[#F3EFEA] text-xs font-medium py-2 rounded-lg transition-all"
+                                className="w-full border border-[#E8E2D9] bg-white hover:bg-[#F3EFEA] text-xs font-semibold py-2.5 rounded-xl transition-all"
                             >
                                 Modify Milestone Quote
                             </button>
                         ) : (
                             <button
                                 onClick={() => onAcceptAndFund && onAcceptAndFund(grossAmount, tdsWithheld, netPayout)}
-                                className="w-full bg-[#C85A32] text-white hover:bg-[#B04B26] py-2 px-3 rounded-lg text-xs font-medium flex items-center justify-center gap-1.5 transition-all shadow-sm active:scale-[0.98]"
+                                className="w-full bg-[#C85A32] hover:bg-[#B04B26] text-white py-3 px-4 rounded-xl text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all shadow-sm active:scale-[0.99] cursor-pointer"
                             >
-                                <span>Accept & Fund Escrow</span>
-                                <ArrowRight className="w-3.5 h-3.5" />
+                                <span>₹ Accept & Lock ₹{grossAmount.toLocaleString('en-IN')} in Escrow</span>
+                                <ArrowRight className="w-4 h-4" />
                             </button>
                         )}
                     </div>
