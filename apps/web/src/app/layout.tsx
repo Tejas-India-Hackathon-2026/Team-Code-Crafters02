@@ -23,8 +23,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
     title: 'Karigar Kart — Handmade Artisan Marketplace',
-    description:
-        'Discover verified artisan goods, commission bespoke handcrafted items, and support Indian makers with AI-powered quality verification.',
+    description: 'Discover verified artisan goods, commission bespoke handcrafted items, and support Indian makers with AI-powered quality verification.',
+    keywords: ['artisan marketplace', 'handmade craft', 'gemini vision verification', 'escrow payments', 'indian artisans'],
 };
 
 export default function RootLayout({
