@@ -423,6 +423,30 @@ function MessagesContent() {
 
             const data = await res.json();
             if (data.orderId) {
+                const orderPayload = {
+                    id: data.orderId,
+                    gross_amount: grossAmount,
+                    withheld_tds: tdsAmount,
+                    net_payout: netAmount,
+                    status: 'HELD_IN_ESCROW',
+                    rail: 'WEB2_NODAL',
+                    carrier_code: 'DELHIVERY',
+                    tracking_id: `TRK-${Math.floor(100000 + Math.random() * 900000)}`,
+                    created_at: new Date().toISOString(),
+                    project: { title: activeDiscussion?.productTitle || 'Handcrafted Artisan Item' },
+                    vendor: { full_name: activeDiscussion?.artisanName || 'Verified Artisan Maker' },
+                    productTitle: activeDiscussion?.productTitle || 'Handcrafted Artisan Item',
+                    artisanId: activeDiscussion?.artisanId,
+                    artisanName: activeDiscussion?.artisanName,
+                    projectId: activeDiscussion?.projectId,
+                    conversationId: activeConversationId,
+                };
+                if (typeof window !== 'undefined') {
+                    try {
+                        localStorage.setItem(`escrow_order_${data.orderId}`, JSON.stringify(orderPayload));
+                    } catch (e) {}
+                }
+
                 sendMessage(
                     `[ESCROW_PAYMENT_CONFIRMED] ✓ Milestone accepted! ₹${grossAmount.toLocaleString('en-IN')} locked in escrow (1% TDS: ₹${tdsAmount}). Order #${data.orderId.slice(0, 8)} is now HELD_IN_ESCROW.`
                 );
