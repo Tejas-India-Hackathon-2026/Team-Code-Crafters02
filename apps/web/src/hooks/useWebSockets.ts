@@ -163,9 +163,10 @@ export function useWebSockets(conversationId: string | null) {
             setIsConnected(false);
         }
 
-        // Supabase Realtime fallback subscription
+        // Supabase Realtime fallback subscription with unique topic to prevent collision
+        const channelTopic = `room:${conversationId}:${Date.now()}`;
         const channel = supabase
-            .channel(`room:${conversationId}`)
+            .channel(channelTopic)
             .on(
                 'postgres_changes',
                 {
@@ -182,8 +183,9 @@ export function useWebSockets(conversationId: string | null) {
                         });
                     }
                 }
-            )
-            .subscribe();
+            );
+
+        channel.subscribe();
 
         return () => {
             socketRef.current?.close();
