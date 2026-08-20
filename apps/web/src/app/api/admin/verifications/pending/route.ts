@@ -24,7 +24,7 @@ export async function GET() {
                 reviewed_by,
                 reviewed_at,
                 created_at,
-                vendor:profiles(id, full_name, avatar_url, is_vendor, vendor_verified)
+                vendor:profiles!verification_reels_vendor_id_fkey(id, full_name, avatar_url, is_vendor, vendor_verified)
             `)
             .in('status', ['PENDING_ADMIN_REVIEW', 'NEEDS_REVIEW', 'PENDING'])
             .order('created_at', { ascending: false });

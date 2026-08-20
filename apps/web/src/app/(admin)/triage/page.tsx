@@ -83,7 +83,7 @@ export default function AdminTriagePage() {
             } else if (activeTab === 'verified_reels') {
                 const { data } = await supabase
                     .from('verification_reels')
-                    .select('*, vendor:profiles(id, full_name, avatar_url, vendor_verified)')
+                    .select('*, vendor:profiles!verification_reels_vendor_id_fkey(id, full_name, avatar_url, vendor_verified)')
                     .in('status', ['VERIFIED', 'AUTO_APPROVED'])
                     .order('created_at', { ascending: false })
                     .limit(30);
@@ -91,7 +91,7 @@ export default function AdminTriagePage() {
             } else if (activeTab === 'rejected_reels') {
                 const { data } = await supabase
                     .from('verification_reels')
-                    .select('*, vendor:profiles(id, full_name, avatar_url, vendor_verified)')
+                    .select('*, vendor:profiles!verification_reels_vendor_id_fkey(id, full_name, avatar_url, vendor_verified)')
                     .eq('status', 'REJECTED')
                     .order('created_at', { ascending: false })
                     .limit(30);

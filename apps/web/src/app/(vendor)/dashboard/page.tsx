@@ -170,12 +170,12 @@ export default function VendorDashboardPage() {
         if (user.user_metadata?.tax_id) setTaxId(user.user_metadata.tax_id);
         if (user.user_metadata?.craft_categories) setSelectedCategories(user.user_metadata.craft_categories);
 
-        // 2. Fetch Artisan's Uploaded Verification Reels / Products (Only Approved)
+        // 2. Fetch Artisan's Uploaded Verification Reels / Products (All active statuses)
         const { data: reels } = await supabase
             .from('verification_reels')
             .select('*')
             .eq('vendor_id', user.id)
-            .eq('status', 'AUTO_APPROVED')
+            .in('status', ['VERIFIED', 'AUTO_APPROVED', 'PENDING_ADMIN_REVIEW', 'NEEDS_REVIEW', 'PENDING'])
             .order('created_at', { ascending: false });
 
         if (reels && reels.length > 0) {
