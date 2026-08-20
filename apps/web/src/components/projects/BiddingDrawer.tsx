@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { createClient } from '../../lib/supabaseClient';
-import { ShieldCheck, Lock, Send } from 'lucide-react';
+import { ShieldCheck, Lock, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export interface BidTdsBreakdown {
     grossAmount: number;
@@ -30,6 +30,10 @@ export interface BiddingDrawerProps {
     onBidSubmitted?: () => void;
 }
 
+/**
+ * Calculates Section 194-O compliant TDS deductions and net maker earnings.
+ * @param amountNum Gross bid amount proposed by the artisan.
+ */
 export function calculateBidBreakdown(amountNum: number): BidTdsBreakdown {
     const gross = Math.max(0, isNaN(amountNum) ? 0 : amountNum);
     const tds = Math.round(gross * 0.01);
@@ -42,7 +46,11 @@ export function calculateBidBreakdown(amountNum: number): BidTdsBreakdown {
     };
 }
 
-export default function BiddingDrawer({
+/**
+ * BiddingDrawer enables verified artisans to submit confidential, milestone-backed
+ * proposals with live Section 194-O TDS calculations on bespoke commission briefs.
+ */
+export function BiddingDrawer({
     projectId,
     isVendor,
     isVerified,
@@ -50,7 +58,7 @@ export default function BiddingDrawer({
     minBudget,
     maxBudget,
     onBidSubmitted,
-}: BiddingDrawerProps) {
+}: BiddingDrawerProps): React.ReactNode {
     const supabase = createClient();
     const [bidAmount, setBidAmount] = useState('');
     const [proposalText, setProposalText] = useState('');
@@ -235,3 +243,5 @@ export default function BiddingDrawer({
         </div>
     );
 }
+
+export default BiddingDrawer;
