@@ -20,22 +20,85 @@ export function useWebSockets(conversationId: string | null) {
         if (!conversationId) return;
 
         const loadHistory = async () => {
-            const { data } = await supabase
-                .from('messages')
-                .select('*')
-                .eq('conversation_id', conversationId)
-                .order('created_at', { ascending: true })
-                .limit(50);
+            // First check local storage sync
+            const localKey = `chat_msgs_${conversationId}`;
+            let loadedFromLocal = false;
+            if (typeof window !== 'undefined') {
+                const stored = localStorage.getItem(localKey);
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            setMessages(parsed);
+                            loadedFromLocal = true;
+                        }
+                    } catch (e) {}
+                }
+            }
 
-            if (data && data.length > 0) {
-                setMessages(data);
+            // Then fetch from Supabase
+            try {
+                const { data } = await supabase
+                    .from('messages')
+                    .select('*')
+                    .eq('conversation_id', conversationId)
+                    .order('created_at', { ascending: true })
+                    .limit(50);
+
+                if (data && data.length > 0) {
+                    setMessages((prev) => {
+                        const ids = new Set(data.map((m) => m.id));
+                        const remaining = prev.filter((m) => !ids.has(m.id));
+                        const merged = [...data, ...remaining];
+                        merged.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+                        return merged;
+                    });
+                }
+            } catch (err) {
+                console.error('Supabase message history fetch:', err);
             }
         };
 
         loadHistory();
     }, [conversationId]);
 
-    // 2. Setup WebSocket or Supabase Realtime subscription
+    // 2. Setup BroadcastChannel & Window event synchronization for instant multi-tab sync
+    useEffect(() => {
+        if (!conversationId || typeof window === 'undefined') return;
+
+        let bc: BroadcastChannel | null = null;
+        try {
+            bc = new BroadcastChannel('karigar_chat_sync');
+            bc.onmessage = (event) => {
+                const data = event.data;
+                if (data?.conversationId === conversationId && data?.message) {
+                    setMessages((prev) => {
+                        if (prev.some((m) => m.id === data.message.id)) return prev;
+                        return [...prev, data.message];
+                    });
+                }
+            };
+        } catch (e) {}
+
+        const handleCustomMsg = (event: any) => {
+            const data = event.detail;
+            if (data?.conversationId === conversationId && data?.message) {
+                setMessages((prev) => {
+                    if (prev.some((m) => m.id === data.message.id)) return prev;
+                    return [...prev, data.message];
+                });
+            }
+        };
+
+        window.addEventListener('karigar_new_message', handleCustomMsg);
+
+        return () => {
+            bc?.close();
+            window.removeEventListener('karigar_new_message', handleCustomMsg);
+        };
+    }, [conversationId]);
+
+    // 3. Setup WebSocket & Supabase Realtime subscription
     const connect = useCallback(async () => {
         if (!conversationId) return;
 
@@ -86,19 +149,23 @@ export function useWebSockets(conversationId: string | null) {
         // Supabase Realtime fallback subscription
         const channel = supabase
             .channel(`room:${conversationId}`)
-            .on('postgres_changes', {
-                event: 'INSERT',
-                schema: 'public',
-                table: 'messages',
-                filter: `conversation_id=eq.${conversationId}`,
-            }, (payload) => {
-                if (payload.new) {
-                    setMessages((prev) => {
-                        if (prev.some((m) => m.id === payload.new.id)) return prev;
-                        return [...prev, payload.new];
-                    });
+            .on(
+                'postgres_changes',
+                {
+                    event: 'INSERT',
+                    schema: 'public',
+                    table: 'messages',
+                    filter: `conversation_id=eq.${conversationId}`,
+                },
+                (payload) => {
+                    if (payload.new) {
+                        setMessages((prev) => {
+                            if (prev.some((m) => m.id === payload.new.id)) return prev;
+                            return [...prev, payload.new];
+                        });
+                    }
                 }
-            })
+            )
             .subscribe();
 
         return () => {
@@ -114,9 +181,9 @@ export function useWebSockets(conversationId: string | null) {
         };
     }, [connect]);
 
-    // 3. Send message with dual-rail routing (WS gateway -> DB fallback)
+    // 4. Send message with dual-rail routing (WS gateway -> BroadcastChannel -> DB fallback)
     const sendMessage = async (rawContent: string) => {
-        if (!rawContent.trim()) return;
+        if (!rawContent.trim() || !conversationId) return;
 
         // Ingress sanitization for contact info
         let sanitized = rawContent;
@@ -144,16 +211,9 @@ export function useWebSockets(conversationId: string | null) {
             setTimeout(() => setWarningBanner(null), 6000);
         }
 
-        // Send via WebSocket if open
-        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({ type: 'SEND_MESSAGE', content: sanitized }));
-            return;
-        }
-
-        // Direct Supabase DB insert fallback
         const { data: { user } } = await supabase.auth.getUser();
         const newMsgObj = {
-            id: `msg-${Date.now()}`,
+            id: `msg-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
             conversation_id: conversationId,
             sender_id: user?.id || 'anonymous_sender',
             content: sanitized,
@@ -162,9 +222,34 @@ export function useWebSockets(conversationId: string | null) {
             created_at: new Date().toISOString(),
         };
 
-        // Optimistically add to UI
+        // 1. Optimistically add to local UI state
         setMessages((prev) => [...prev, newMsgObj]);
 
+        // 2. Persist to shared localStorage so other tabs & accounts see it immediately
+        const localKey = `chat_msgs_${conversationId}`;
+        if (typeof window !== 'undefined') {
+            try {
+                const prevStored = JSON.parse(localStorage.getItem(localKey) || '[]');
+                localStorage.setItem(localKey, JSON.stringify([...prevStored, newMsgObj]));
+            } catch (e) {}
+
+            // 3. Broadcast to all open tabs/windows
+            try {
+                window.dispatchEvent(
+                    new CustomEvent('karigar_new_message', { detail: { conversationId, message: newMsgObj } })
+                );
+                const bc = new BroadcastChannel('karigar_chat_sync');
+                bc.postMessage({ conversationId, message: newMsgObj });
+                setTimeout(() => bc.close(), 100);
+            } catch (e) {}
+        }
+
+        // 4. Send via WebSocket if open
+        if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify({ type: 'SEND_MESSAGE', content: sanitized }));
+        }
+
+        // 5. Direct Supabase DB insert fallback
         try {
             await supabase.from('messages').insert({
                 conversation_id: conversationId,
