@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ShieldCheck, UserCheck, ArrowRight, Sparkles, Lock } from 'lucide-react';
 
 /** AuthPage serves as the authentication hub for buyer sign-in and artisan maker onboarding */
-export default function AuthPage(): JSX.Element {
+export default function AuthPage(): React.ReactNode {
     return (
         <main
             aria-label="Karigar Kart Authentication Hub"
