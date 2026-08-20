@@ -1,33 +1,45 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { motion, useSpring, useTransform } from 'framer-motion';
+import { useEffect, useState } from 'react';
+import { motion, useSpring, useTransform, type SpringOptions } from 'framer-motion';
 import { cn } from '../../lib/utils';
 
-interface AnimatedNumberProps {
+export interface AnimatedNumberProps {
     value: number;
-    duration?: number;
     className?: string;
+    springOptions?: SpringOptions;
+    as?: React.ElementType;
     prefix?: string;
     suffix?: string;
     decimals?: number;
+    format?: (value: number) => string;
 }
 
 export function AnimatedNumber({
     value,
     className,
+    springOptions,
+    as = 'span',
     prefix = '',
     suffix = '',
     decimals = 0,
+    format,
 }: AnimatedNumberProps) {
-    const spring = useSpring(0, { mass: 0.8, stiffness: 75, damping: 15 });
+    const spring = useSpring(0, springOptions || { mass: 0.8, stiffness: 75, damping: 15 });
+    
     const display = useTransform(spring, (current) => {
+        if (format) {
+            return format(current);
+        }
         return `${prefix}${current.toFixed(decimals)}${suffix}`;
     });
 
-    const [renderedValue, setRenderedValue] = useState<string>(
-        `${prefix}${value.toFixed(decimals)}${suffix}`
-    );
+    const [renderedValue, setRenderedValue] = useState<string>(() => {
+        if (format) {
+            return format(value);
+        }
+        return `${prefix}${value.toFixed(decimals)}${suffix}`;
+    });
 
     useEffect(() => {
         spring.set(value);
@@ -39,9 +51,13 @@ export function AnimatedNumber({
         });
     }, [display]);
 
+    const Component = as as any;
+
     return (
-        <span className={cn('tabular-nums font-mono', className)}>
+        <Component className={cn('tabular-nums font-mono', className)}>
             {renderedValue}
-        </span>
+        </Component>
     );
 }
+
+export default AnimatedNumber;

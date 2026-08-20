@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { Receipt, ArrowRight, ShieldCheck, CheckCircle2, Truck, Clock } from 'lucide-react';
 import Link from 'next/link';
+import { AnimatedNumber } from '../ui/animated-number';
 
 interface QuoteCardProps {
     isVendor?: boolean;
@@ -123,17 +124,23 @@ export default function QuoteCard({
                     <div className="bg-[#FAF8F5] rounded-xl p-3.5 flex flex-col gap-2 border border-[#F3EFEA]">
                         <div className="flex justify-between items-center text-xs text-[#6B635B]">
                             <span>Gross Amount</span>
-                            <span className="font-bold text-[#1E1B18] font-mono">₹{grossAmount.toLocaleString('en-IN')}</span>
+                            <span className="font-bold text-[#1E1B18] font-mono">
+                                <AnimatedNumber value={grossAmount} prefix="₹" />
+                            </span>
                         </div>
 
                         <div className="flex justify-between items-center text-xs text-[#D32F2F]">
                             <span>1% TDS (Section 194-O)</span>
-                            <span className="font-bold font-mono">-₹{tdsWithheld.toLocaleString('en-IN')}</span>
+                            <span className="font-bold font-mono">
+                                -<AnimatedNumber value={tdsWithheld} prefix="₹" />
+                            </span>
                         </div>
 
                         <div className="flex justify-between items-center text-xs font-bold text-[#1E1B18] pt-2 border-t border-[#E8E2D9]">
                             <span>Maker Net Payout</span>
-                            <span className="font-mono text-[#2E7D32]">₹{netPayout.toLocaleString('en-IN')}</span>
+                            <span className="font-mono text-[#2E7D32]">
+                                <AnimatedNumber value={netPayout} prefix="₹" />
+                            </span>
                         </div>
                     </div>
 

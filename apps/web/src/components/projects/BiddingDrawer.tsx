@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { createClient } from '../../lib/supabaseClient';
 import { ShieldCheck, Lock, Send, CheckCircle2, AlertCircle, Trash2 } from 'lucide-react';
+import { AnimatedNumber } from '../ui/animated-number';
 
 export interface BidTdsBreakdown {
     grossAmount: number;
@@ -366,20 +367,26 @@ export function BiddingDrawer({
                     />
                 </div>
 
-                {/* Section 194-O TDS Payout Breakdown */}
+                {/* Section 194-O TDS Payout Breakdown with Animated Numbers */}
                 {breakdown.grossAmount > 0 && (
                     <div className="p-3 bg-[#FAF8F5] border border-[#E8E2D9] rounded-xl text-xs flex flex-col gap-1.5 animate-fade-in">
                         <div className="flex justify-between text-[#6B635B] text-[11px]">
                             <span>Gross Proposal Amount:</span>
-                            <span className="font-mono font-medium text-[#1E1B18]">₹{breakdown.grossAmount.toLocaleString('en-IN')}</span>
+                            <span className="font-mono font-medium text-[#1E1B18]">
+                                <AnimatedNumber value={breakdown.grossAmount} prefix="₹" />
+                            </span>
                         </div>
                         <div className="flex justify-between text-[#D32F2F] text-[11px]">
                             <span>1% TDS Withholding (Sec 194-O):</span>
-                            <span className="font-mono font-medium">-₹{breakdown.tdsWithholding.toLocaleString('en-IN')}</span>
+                            <span className="font-mono font-medium">
+                                -<AnimatedNumber value={breakdown.tdsWithholding} prefix="₹" />
+                            </span>
                         </div>
                         <div className="pt-1.5 border-t border-[#E8E2D9] flex justify-between font-bold text-[#2E7D32] text-xs">
                             <span>Net Maker Escrow Payout:</span>
-                            <span className="font-mono">₹{breakdown.makerNetPayout.toLocaleString('en-IN')}</span>
+                            <span className="font-mono">
+                                <AnimatedNumber value={breakdown.makerNetPayout} prefix="₹" />
+                            </span>
                         </div>
                     </div>
                 )}
