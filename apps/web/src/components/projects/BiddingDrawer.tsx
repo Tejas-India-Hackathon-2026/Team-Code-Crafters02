@@ -30,17 +30,36 @@ export interface BiddingDrawerProps {
     onBidSubmitted?: () => void;
 }
 
+export function calculateBidBreakdown(amountNum: number): BidTdsBreakdown {
+    const gross = Math.max(0, isNaN(amountNum) ? 0 : amountNum);
+    const tds = Math.round(gross * 0.01);
+    const net = Math.max(0, gross - tds);
+    return {
+        grossAmount: gross,
+        tdsWithholding: tds,
+        makerNetPayout: net,
+        effectiveRate: '1% Section 194-O TDS',
+    };
+}
+
 export default function BiddingDrawer({
     projectId,
     isVendor,
     isVerified,
+    projectTitle,
+    minBudget,
+    maxBudget,
     onBidSubmitted,
 }: BiddingDrawerProps) {
     const supabase = createClient();
     const [bidAmount, setBidAmount] = useState('');
     const [proposalText, setProposalText] = useState('');
+    const [estimatedDays, setEstimatedDays] = useState('7');
     const [loading, setLoading] = useState(false);
-    const [statusMsg, setStatusMsg] = useState('');
+    const [statusMsg, setStatusMsg] = useState<string | null>(null);
+    const [statusType, setStatusType] = useState<'success' | 'error' | 'info' | null>(null);
+
+    const breakdown = calculateBidBreakdown(parseFloat(bidAmount));
 
     const handleBidSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
