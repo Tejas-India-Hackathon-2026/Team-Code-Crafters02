@@ -109,6 +109,7 @@ export function ChatPanel({
             {/* Input Footer */}
             <form onSubmit={handleSend} className="p-3 bg-white border-t border-[#E8E2D9] flex items-center gap-2">
                 <input
+                    id="chat-message-input"
                     type="text"
                     placeholder={`Message ${artisanName}...`}
                     value={input}
