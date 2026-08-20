@@ -31,7 +31,7 @@ export default function RootLayout({
     children,
 }: {
     children: React.ReactNode;
-}) {
+}): JSX.Element {
     return (
         <html lang="en" className={`${plusJakartaSans.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
             <body className="bg-[#FDFBF7] text-[#1E1B18] antialiased">
