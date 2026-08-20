@@ -16,6 +16,7 @@ import {
     Sparkles,
     Check,
     AlertCircle,
+    MessageSquare,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -422,14 +423,23 @@ export default function OrderTrackingPage() {
 
                     {/* Released Status Banner */}
                     {order.status === 'RELEASED' && (
-                        <div className="bg-[#EDF7ED] border border-[#2E7D32]/20 p-4 rounded-xl text-xs text-[#2E7D32] flex items-center gap-2.5 mb-4 animate-fade-in">
-                            <CheckCircle2 className="w-5 h-5 shrink-0" />
-                            <div>
-                                <p className="font-bold">Escrow Payout Complete</p>
-                                <p className="text-[11px] text-[#6B635B]">
-                                    Net funds (₹{order.net_payout?.toLocaleString('en-IN')}) have been disbursed to the artisan's registered bank account.
-                                </p>
+                        <div className="bg-[#EDF7ED] border border-[#2E7D32]/20 p-4 rounded-xl text-xs text-[#2E7D32] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 mb-4 animate-fade-in shadow-xs">
+                            <div className="flex items-center gap-2.5">
+                                <CheckCircle2 className="w-5 h-5 shrink-0" />
+                                <div>
+                                    <p className="font-bold">Escrow Payout Complete</p>
+                                    <p className="text-[11px] text-[#6B635B]">
+                                        Net funds (₹{order.net_payout?.toLocaleString('en-IN')}) have been disbursed to the artisan's registered bank account.
+                                    </p>
+                                </div>
                             </div>
+                            <Link
+                                href={`/messages?artisanId=${order.artisanId || order.vendor_id || 'raja'}&orderId=${order.id}&escrowStatus=RELEASED&productTitle=${encodeURIComponent(order.project?.title || order.productTitle || 'Custom Craft')}&price=${order.gross_amount || 300}`}
+                                className="btn-primary text-xs py-2 px-3.5 bg-[#2E7D32] hover:bg-[#256628] font-bold flex items-center gap-1.5 shrink-0 shadow-sm"
+                            >
+                                <MessageSquare className="w-3.5 h-3.5" />
+                                <span>Return to Chat & Finalize Order →</span>
+                            </Link>
                         </div>
                     )}
 
