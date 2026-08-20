@@ -6,6 +6,7 @@ import { Receipt, ArrowRight, ShieldCheck, CheckCircle2 } from 'lucide-react';
 interface QuoteCardProps {
     isVendor?: boolean;
     isVerified?: boolean;
+    isFinalized?: boolean;
     title?: string;
     grossPrice?: number;
     onAcceptAndFund?: (grossAmount: number, tdsAmount: number, netAmount: number) => void;
@@ -15,6 +16,7 @@ interface QuoteCardProps {
 export default function QuoteCard({
     isVendor = false,
     isVerified = false,
+    isFinalized = false,
     title = 'Custom Bridal Katan Silk Saree (6.3m)',
     grossPrice = 24500,
     onAcceptAndFund,
@@ -48,10 +50,17 @@ export default function QuoteCard({
                 <span className="text-[11px] font-bold tracking-wider text-[#6B635B] uppercase font-mono">
                     FORMAL MAKER QUOTE
                 </span>
-                <span className="text-[10px] uppercase font-bold text-white bg-[#2C4A3E] px-2.5 py-0.5 rounded-full tracking-wider flex items-center gap-1 shadow-xs">
-                    <ShieldCheck className="w-3 h-3" />
-                    ESCROW READY
-                </span>
+                {isFinalized ? (
+                    <span className="text-[10px] uppercase font-bold text-[#2E7D32] bg-[#EDF7ED] border border-[#2E7D32]/30 px-2.5 py-0.5 rounded-full tracking-wider flex items-center gap-1 shadow-xs">
+                        <CheckCircle2 className="w-3 h-3" />
+                        ORDER FINALIZED
+                    </span>
+                ) : (
+                    <span className="text-[10px] uppercase font-bold text-white bg-[#2C4A3E] px-2.5 py-0.5 rounded-full tracking-wider flex items-center gap-1 shadow-xs">
+                        <ShieldCheck className="w-3 h-3" />
+                        ESCROW READY
+                    </span>
+                )}
             </div>
 
             {isCreatingQuote && isVendor && isVerified ? (
@@ -107,10 +116,15 @@ export default function QuoteCard({
                     </div>
 
                     <div className="mt-1">
-                        {isVendor && isVerified ? (
+                        {isFinalized ? (
+                            <div className="w-full bg-[#EDF7ED] border border-[#2E7D32]/20 py-2.5 px-3 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-[#2E7D32]">
+                                <CheckCircle2 className="w-4 h-4" />
+                                <span>Order Finalized & Escrow Released</span>
+                            </div>
+                        ) : isVendor && isVerified ? (
                             <button
                                 onClick={() => setIsCreatingQuote(true)}
-                                className="w-full border border-[#E8E2D9] bg-white hover:bg-[#F3EFEA] text-xs font-semibold py-2.5 rounded-xl transition-all"
+                                className="w-full border border-[#E8E2D9] bg-white hover:bg-[#F3EFEA] text-xs font-semibold py-2.5 rounded-xl transition-all cursor-pointer"
                             >
                                 Modify Milestone Quote
                             </button>
