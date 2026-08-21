@@ -5,7 +5,7 @@
 
 ---
 
-[![Next.js](https://img.shields.io/badge/Next.js-16.3-black?style=flat-square&logo=next.js)](https://nextjs.org/)
+[![Next.js](https://img.shields.io/badge/Next.js-16-black?style=flat-square&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-4.0-38B2AC?style=flat-square&logo=tailwind-css)](https://tailwindcss.com/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL_%26_Auth-3ECF8E?style=flat-square&logo=supabase)](https://supabase.com/)
@@ -17,37 +17,55 @@
 
 ## 📌 Problem Statement & Market Context
 
-India is home to over **64.66 lakh artisans** across handloom, pottery, metal crafts, and woodworking. Despite the immense cultural heritage and market demand:
-1. **Middlemen Exploitation:** Traditional physical and digital intermediaries capture **15–25%+ cuts**, leaving master artisans with razor-thin margins and unpredictable income.
+India is home to over **64.66 lakh artisans** across handloom, pottery, metal crafts, woodworking, and folk arts. Despite immense cultural heritage and rising global demand for authentic handmade goods:
+
+1. **Middlemen Exploitation:** Traditional physical and digital intermediaries capture **15% to 35%+ cuts**, leaving master artisans with razor-thin margins and unpredictable income.
 2. **Counterfeit Machine-Made Goods:** An estimated **15%+ of online "handmade" listings** are mass-produced factory knock-offs, eroding buyer confidence and depressing prices for genuine handmade items.
 3. **Statutory Tax & Payment Insecurity:** Grassroots makers struggle with delayed payments, arbitrary chargebacks, and legal tax compliances like **Section 194-O of the Indian Income Tax Act** (1% TDS on e-commerce operators).
 
-**Karigar Kart** introduces a **Proof-of-Craft** ecosystem that replaces unverified static photos with AI-inspected video reels, hyperlocal reverse-bidding, and dual-rail escrow with automated tax compliance.
+**Karigar Kart** introduces a **Proof-of-Craft** ecosystem that replaces unverified static photos with AI-inspected video reels, hyperlocal reverse-bidding, brand stamp authentication, and dual-rail escrow with automated tax compliance.
 
 ---
 
-## ✨ Core Platform Innovations
+## ✨ Key Platform Features & Innovations
 
 ### 🎥 1. Proof-of-Craft Video Reels
-Instead of static images that can be stolen from factory catalogs, artisans upload **30–60 second vertical reels (9:16)** demonstrating their raw making process (chisel work, wheel throwing, handloom shuttle movements, natural dye mixing).
+Instead of static photos that can be copied from factory catalogs, artisans upload **30–60 second vertical reels (9:16)** demonstrating their raw making process (chisel work, wheel throwing, handloom shuttle movements, natural dye mixing, resin setting, wood pyrography).
 
 ### 🤖 2. Tiered Multimodal AI Verification Pipeline
-Powered by **Google Gemini 2.5 Flash Multimodal Vision**, our inspection pipeline extracts keyframes and evaluates handcraft authenticity against registered workshop brand stamps and maker tooling:
+Powered by **Google Gemini 2.5 Flash Multimodal Vision** and **OpenCV keyframe extraction**, our inspection pipeline extracts keyframes and evaluates handcraft authenticity against registered workshop brand stamps and maker tooling:
 * **$\ge 90\%$ Confidence Score:** $\rightarrow$ **Instant Auto-Approval** & badge minting (`#BATCH-CERTIFIED`).
 * **$85\text{--}90\%$ Confidence Score:** $\rightarrow$ **Admin Triage Queue** for human-in-the-loop guild review.
-* **$< 85\%$ Confidence Score:** $\rightarrow$ **Automated Rejection** with automated guidance on what authentic making markers were missing.
+* **$< 85\%$ Confidence Score:** $\rightarrow$ **Automated Rejection** with clear feedback on missing handmade markers.
 
-### 📍 3. Hyperlocal Reverse-Bidding & Geo-Discovery
-* Buyers post custom commission specifications (budget bounds, reference sketches, delivery deadline, and GPS coordinates).
+### 🎨 3. Comprehensive Craft Categories
+Artisans can list and showcase authentic handmade creations across 22+ specialized categories:
+* ✏️ Custom Sketches & Portraits (Pencil sketches, charcoal art, digital hand-drawn prints, caricatures)
+* 🪵 Wood Painting & Pyrography (Wood burning, hand-painted wooden planks, nameplates, coasters)
+* 🧪 Resin & Floral Art (Preserved flower frames, resin clocks, ocean art tables, jewelry trays)
+* 🧶 Crochet & Macramé Decor (Wall hangings, plushies, handmade bags, plant hangers)
+* 🕯️ Handmade Candles & Wax Art (Scented soy candles, carved wax art, aroma diffusers)
+* 📜 Calligraphy & Hand Lettering (Custom invites, poetic scrolls, engraved wooden plaques)
+* 📄 Papercraft & Origami Art (Quilling art, 3D paper sculptures, handmade diary bindings)
+* 🪆 Folk Toys & Puppetry (Handmade clay toys, wooden peg dolls, traditional puppets)
+* 🪞 Lippan & Mud Mirror Art (Kutch clay mirror work, mural wall panels)
+* 🏺 Pottery & Terracotta, 🧵 Handloom Silk & Cotton, 🪙 Metal Craft & Brassware, 💍 Handmade Jewelry, 🪡 Embroidery & Zardozi, and more.
+
+### 📍 4. Hyperlocal Reverse-Bidding & Geo-Discovery
+* Buyers post custom commission specifications (budget bounds in Indian Rupee ₹, reference sketches, delivery deadline, and GPS coordinates).
 * **PostGIS spatial indexing (`ST_DWithin`)** identifies verified makers within the buyer's geographical radius.
 * Artisans browse open regional commissions and submit bespoke bids with structured milestones and delivery timelines.
 
-### 🔒 4. Dual-Rail Escrow Settlement & 48-Hour Inspection Buffer
-* **Default Web2 Rail (RBI-Compliant Nodal Account):** Secure bank nodal escrow (e.g., Castler/Escrowpay) holding UPI/Netbanking funds.
+### 🧭 5. Artisan Identity & GPS Auto-Detection
+* **Strict Maker Verification**: Artisans start as `Unverified Maker` until both a registered workshop brand logo/stamp and physical workshop location are provided and verified.
+* **1-Click GPS Auto-Detection**: Integrated browser Geolocation and OpenStreetMap (Nominatim) reverse-geocoding automatically resolves the artisan's city, district, state, and country.
+
+### 🔒 6. Dual-Rail Escrow Settlement & 48-Hour Inspection Buffer
+* **Default Web2 Rail (RBI-Compliant Nodal Account):** Secure bank nodal escrow (e.g., Castler / Escrowpay) holding UPI / Netbanking funds.
 * **Opt-In Web3 Rail (EVM Smart Contracts):** Programmatic on-chain settlement using Solidity (`DeliveryEscrow.sol`, `EscrowFactory.sol`) with USDC / ERC-20 tokens.
 * **48-Hour Post-Delivery Buffer:** Payout is held safely post-delivery. If no defect dispute is lodged within 48 hours, the payout auto-releases directly to the artisan's bank account.
 
-### 💬 5. In-App Moderated Negotiation & Ingress Contact Masking
+### 💬 7. In-App Moderated Negotiation & Ingress Contact Masking
 * Real-time in-app chat enabling custom milestone quotes, material clarification, and progress photos.
 * Automated regex and pattern-matching sanitize phone numbers, emails, and external payment links to protect both parties from off-platform bypass fraud.
 
@@ -83,8 +101,13 @@ karigar_kart/
 │   ├── web/                        # Next.js 16 (App Router), Tailwind CSS 4, Motion Primitives
 │   │   ├── src/
 │   │   │   ├── app/                # Buyer, Artisan, Admin, and API Route Handlers
+│   │   │   │   ├── (auth)/         # Login and authentication views
+│   │   │   │   ├── (buyer)/        # Buyer portal (feed, profile, messages, commissions)
+│   │   │   │   ├── (vendor)/       # Artisan portal (artisan welcome, dashboard, onboarding, upload)
+│   │   │   │   ├── api/            # Route handlers (auth, bidding, vision, escrow)
+│   │   │   │   └── triage/         # Admin triage queue for human-in-the-loop review
 │   │   │   ├── components/         # Kinto UI Cards, Badges, Chat, Escrow, Map, Sliding Tabs
-│   │   │   ├── lib/                # Supabase clients (client, server, middleware)
+│   │   │   ├── lib/                # Supabase singleton client, authHelper, spatial math
 │   │   │   └── types/              # TypeScript models (bids, orders, verification)
 │   │   └── public/                 # Static branding assets and icons
 │   ├── gateway/                    # Express + WebSockets courier tracking & state gateway
@@ -92,12 +115,13 @@ karigar_kart/
 │   └── ai-engine/                  # Python FastAPI multimodal video verification pipeline
 │       └── app/
 │           ├── models/             # Gemini 2.5 Flash vision checker & brand stamp matcher
-│           └── pipeline/           # OpenCV keyframe extractor & liveness filter
+│           ├── pipeline/           # OpenCV keyframe extractor & liveness filter
+│           └── workers/            # Celery / Redis background inspection jobs
 ├── packages/
 │   ├── contracts/                  # Solidity smart contracts (DeliveryEscrow.sol, EscrowFactory.sol)
 │   └── database/                   # PostgreSQL schema definitions, PostGIS setup, and RLS policies
 ├── docs/                           # Architecture specifications, diagrams, and PRD documents
-├── package.json                    # Monorepo root workspace management
+├── package.json                    # Monorepo root workspace configuration
 └── README.md                       # Complete platform documentation
 ```
 
@@ -145,7 +169,7 @@ $$\text{Net Artisan Disbursement} = ₹10,000 - (₹500 + ₹100) = ₹9,400$$
 ## 🚀 Local Setup & Installation Guide
 
 ### Prerequisites
-* **Node.js**: v18.18.0 or higher
+* **Node.js**: v18.18.0 or higher (v20+ recommended)
 * **Python**: 3.10 or higher
 * **npm** / **pnpm**
 * **Git**
@@ -244,6 +268,7 @@ The web marketplace will be live on **[http://localhost:3000](http://localhost:3
 * **HMAC-SHA256 Webhook Verification:** Courier status webhooks (Dispatched $\rightarrow$ In-Transit $\rightarrow$ Delivered) require cryptographic signature validation before triggering escrow countdowns.
 * **Smart Contract Reentrancy Protection:** `DeliveryEscrow.sol` includes non-reentrant guards (`nonReentrant`) and state validation (`onlyBuyerOrRelayer`).
 * **Ingress Sanitizer:** Chat messages are sanitized in real time to prevent cross-site scripting (XSS) and off-platform disintermediation.
+* **Tri-Layer Session Hydration:** Resilient multi-tier authentication engine ensuring seamless state recovery across browser reloads without redirect loops.
 
 ---
 
