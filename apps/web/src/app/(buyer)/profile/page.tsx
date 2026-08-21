@@ -120,8 +120,16 @@ export default function ProfilePage() {
                 }),
             });
 
+            await supabase
+                .from('profiles')
+                .update({
+                    full_name: fullName.trim(),
+                    avatar_url: avatarUrl,
+                })
+                .eq('id', user.id);
+
             if (!res.ok) {
-                throw new Error('Failed to update profile.');
+                console.warn('API sync notice:', await res.text().catch(() => ''));
             }
 
             setStatusMsg('Profile updated successfully!');

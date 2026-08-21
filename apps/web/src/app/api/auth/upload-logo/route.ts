@@ -63,7 +63,7 @@ export async function POST(request: Request) {
             logoUrl = `/uploads/logos/${fileName}`;
         }
 
-        return NextResponse.json({ success: true, logoUrl });
+        return NextResponse.json({ success: true, logoUrl, avatarUrl: logoUrl });
     } catch (err: any) {
         console.error('Logo upload error:', err);
         return NextResponse.json({ error: err.message || 'Logo upload failed' }, { status: 500 });

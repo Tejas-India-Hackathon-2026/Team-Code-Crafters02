@@ -33,32 +33,7 @@ export async function POST(request: Request) {
 
         if (fullName !== undefined) profileUpdate.full_name = fullName;
         if (avatarUrl !== undefined) profileUpdate.avatar_url = avatarUrl;
-        if (isVendor !== undefined) {
-            profileUpdate.is_vendor = !!isVendor;
-            if (isVendor) {
-                // If switching to vendor or registering, ensure vendor_verified is true
-                profileUpdate.vendor_verified = true;
-            }
-        }
-        if (vendorVerified !== undefined) profileUpdate.vendor_verified = !!vendorVerified;
-
-        // Ensure valid enum value for Postgres kyc_status_enum ('NONE' | 'PENDING' | 'PASSED')
-        if (kycStatus !== undefined) {
-            let sanitizedKyc: 'NONE' | 'PENDING' | 'PASSED' = 'NONE';
-            if (kycStatus === 'APPROVED' || kycStatus === 'PASSED' || kycStatus === true) {
-                sanitizedKyc = 'PASSED';
-            } else if (kycStatus === 'PENDING') {
-                sanitizedKyc = 'PENDING';
-            }
-            profileUpdate.kyc_status = sanitizedKyc;
-        } else if (isVendor) {
-            profileUpdate.kyc_status = 'PASSED';
-        }
-
-        // Add PostGIS point if coordinates are provided
-        if (latitude !== undefined && longitude !== undefined && latitude !== null && longitude !== null) {
-            profileUpdate.geo_location = `POINT(${longitude} ${latitude})`;
-        }
+        if (isVendor !== undefined) profileUpdate.is_vendor = !!isVendor;
 
         // Check if row already exists
         const { data: existingProfile } = await supabaseAdmin
@@ -66,6 +41,23 @@ export async function POST(request: Request) {
             .select('*')
             .eq('id', userId)
             .maybeSingle();
+
+        // Strict Artisan Verification Rule:
+        // An artisan is verified ONLY if BOTH a brand logo (avatar_url) and workshop location are present!
+        const finalLogo = avatarUrl || existingProfile?.avatar_url;
+        const finalLocation = location || existingProfile?.user_metadata?.location || existingProfile?.geo_location;
+
+        const isVerifiedArtisan = isVendor !== false
+            ? !!(finalLogo && finalLocation && finalLocation.toString().trim().length > 0)
+            : false;
+
+        profileUpdate.vendor_verified = isVerifiedArtisan;
+        profileUpdate.kyc_status = isVerifiedArtisan ? 'PASSED' : 'PENDING';
+
+        // Add PostGIS point if coordinates are provided
+        if (latitude !== undefined && longitude !== undefined && latitude !== null && longitude !== null) {
+            profileUpdate.geo_location = `POINT(${longitude} ${latitude})`;
+        }
 
         let updatedData = null;
 
@@ -112,7 +104,7 @@ export async function POST(request: Request) {
             metadataUpdate.avatar_url = avatarUrl;
         }
         if (isVendor !== undefined) metadataUpdate.is_vendor = isVendor;
-        metadataUpdate.vendor_verified = true;
+        metadataUpdate.vendor_verified = isVerifiedArtisan;
         if (craftCategories) metadataUpdate.craft_categories = craftCategories;
         if (craftCategory) metadataUpdate.craft_category = craftCategory;
         if (location) metadataUpdate.location = location;

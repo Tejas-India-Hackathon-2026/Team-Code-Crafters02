@@ -95,9 +95,26 @@ export default function Navbar() {
             setSwitchingRole(true);
             const newIsVendor = !profile.is_vendor;
 
+            // Strict verification check: only verified if both logo and location exist
+            let hasLocation = false;
+            if (typeof window !== 'undefined') {
+                try {
+                    const savedRaw = localStorage.getItem(`karigar_workshop_profile_${profile.id}`);
+                    if (savedRaw) {
+                        const saved = JSON.parse(savedRaw);
+                        if (saved.location && saved.location.trim().length > 0) {
+                            hasLocation = true;
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            const hasLogo = !!(profile.avatar_url);
+            const isVerified = newIsVendor ? (hasLogo && hasLocation) : false;
+
             const { error } = await supabase
                 .from('profiles')
-                .update({ is_vendor: newIsVendor, vendor_verified: true })
+                .update({ is_vendor: newIsVendor, vendor_verified: isVerified })
                 .eq('id', profile.id);
 
             if (error) {
@@ -108,12 +125,12 @@ export default function Navbar() {
                         userId: profile.id,
                         fullName: profile.full_name,
                         isVendor: newIsVendor,
-                        vendorVerified: true,
+                        vendorVerified: isVerified,
                     }),
                 });
             }
 
-            setProfile((prev) => prev ? { ...prev, is_vendor: newIsVendor, vendor_verified: true } : null);
+            setProfile((prev) => prev ? { ...prev, is_vendor: newIsVendor, vendor_verified: isVerified } : null);
 
             if (newIsVendor) {
                 router.push('/artisan');

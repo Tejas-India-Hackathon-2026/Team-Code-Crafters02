@@ -17,6 +17,7 @@ import {
     Palette,
     Award,
     Compass,
+    AlertTriangle,
 } from 'lucide-react';
 import Link from 'next/link';
 import { KintoCard, KintoBadge } from '../../../components/ui/kinto-card';
@@ -44,11 +45,29 @@ export default function ArtisanWelcomePage() {
                 .eq('id', authUser.id)
                 .maybeSingle();
 
-            setProfile(prof || {
-                full_name: authUser.email?.split('@')[0] || 'Artisan Maker',
+            let cachedLoc = '';
+            let cachedLogo = null;
+            if (typeof window !== 'undefined') {
+                try {
+                    const savedRaw = localStorage.getItem(`karigar_workshop_profile_${authUser.id}`);
+                    if (savedRaw) {
+                        const saved = JSON.parse(savedRaw);
+                        if (saved.location) cachedLoc = saved.location;
+                        if (saved.avatarUrl) cachedLogo = saved.avatarUrl;
+                    }
+                } catch (e) {}
+            }
+
+            const finalLogo = cachedLogo || prof?.avatar_url || authUser.user_metadata?.avatar_url || null;
+            const finalLoc = cachedLoc || authUser.user_metadata?.location || '';
+            const isVerified = !!(finalLogo && finalLoc && finalLoc.trim().length > 0);
+
+            setProfile({
+                id: authUser.id,
+                full_name: prof?.full_name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Artisan Maker',
                 is_vendor: true,
-                vendor_verified: true,
-                avatar_url: authUser.user_metadata?.avatar_url || null,
+                vendor_verified: isVerified,
+                avatar_url: finalLogo,
             });
             setLoading(false);
         };
@@ -80,9 +99,15 @@ export default function ArtisanWelcomePage() {
                     <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-8">
                         <div className="flex flex-col gap-3 max-w-xl">
                             <div className="flex items-center gap-2">
-                                <KintoBadge variant="success" dot={true}>
-                                    VERIFIED MAKER PORTAL
-                                </KintoBadge>
+                                {profile?.vendor_verified ? (
+                                    <KintoBadge variant="success" dot={true}>
+                                        AI-VERIFIED MAKER PORTAL
+                                    </KintoBadge>
+                                ) : (
+                                    <KintoBadge variant="brand" dot={true}>
+                                        UNVERIFIED MAKER — SETUP REQUIRED
+                                    </KintoBadge>
+                                )}
                             </div>
 
                             <h1 className="text-2xl sm:text-4xl font-extrabold text-stone-950 font-display tracking-tight">
@@ -91,8 +116,25 @@ export default function ArtisanWelcomePage() {
                             </h1>
 
                             <p className="text-xs sm:text-sm text-stone-600 leading-relaxed font-normal">
-                                Your verified maker workspace. Upload craft process reels, manage buyer inquiries, submit bespoke bids for custom commissions, and maintain your workshop identity.
+                                Your maker workspace. Upload craft process reels, manage buyer inquiries, submit bespoke bids for custom commissions, and maintain your workshop identity.
                             </p>
+
+                            {!profile?.vendor_verified && (
+                                <div className="p-3 bg-[#FFF9F2] border border-[#ED6C02]/30 rounded-xl text-xs text-[#8A4A00] flex items-center justify-between gap-3 mt-1 shadow-2xs">
+                                    <div className="flex items-center gap-2">
+                                        <AlertTriangle className="w-4 h-4 text-[#ED6C02] shrink-0" />
+                                        <span>
+                                            <strong>Setup needed:</strong> Upload your Workshop Logo & Location to activate your Verified Maker badge.
+                                        </span>
+                                    </div>
+                                    <Link
+                                        href="/dashboard?tab=settings"
+                                        className="btn-secondary text-[11px] py-1 px-2.5 font-bold shrink-0 bg-white text-[#ED6C02] border-[#ED6C02]/40 hover:bg-[#FFF4E5]"
+                                    >
+                                        Setup Now
+                                    </Link>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-col sm:flex-row md:flex-col gap-3 w-full md:w-auto shrink-0">

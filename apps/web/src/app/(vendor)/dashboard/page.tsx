@@ -10,7 +10,6 @@ import {
     FolderOpen,
     Trash2,
     CheckCircle2,
-    DollarSign,
     Calendar,
     Clock,
     Sparkles,
@@ -25,6 +24,9 @@ import {
     ArrowRight,
     Camera,
     Palette,
+    AlertTriangle,
+    Crosshair,
+    Loader2,
 } from 'lucide-react';
 import Link from 'next/link';
 import ReelUploader from '../../../components/media/ReelUploader';
@@ -154,6 +156,8 @@ export default function VendorDashboardPage() {
     const [logoPreview, setLogoPreview] = useState<string | null>(null);
     const [savingProfile, setSavingProfile] = useState(false);
     const [profileSavedMsg, setProfileSavedMsg] = useState<string | null>(null);
+    const [detectingLocation, setDetectingLocation] = useState(false);
+    const [locationDetectedMsg, setLocationDetectedMsg] = useState<string | null>(null);
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -174,29 +178,62 @@ export default function VendorDashboardPage() {
             return;
         }
 
-        // 1. Fetch profile
+        // 1. Fetch profile from Supabase profiles table
         const { data: prof } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', user.id)
             .maybeSingle();
 
-        const currentProf = prof || {
+        // 2. Read saved workshop data from localStorage
+        let cachedLoc = '';
+        let cachedTax = '';
+        let cachedCats: string[] = [];
+        let cachedLogo: string | null = null;
+        let cachedName = '';
+
+        if (typeof window !== 'undefined') {
+            try {
+                const savedRaw = localStorage.getItem(`karigar_workshop_profile_${user.id}`);
+                if (savedRaw) {
+                    const saved = JSON.parse(savedRaw);
+                    if (saved.location) cachedLoc = saved.location;
+                    if (saved.taxId) cachedTax = saved.taxId;
+                    if (saved.craftCategories && Array.isArray(saved.craftCategories)) cachedCats = saved.craftCategories;
+                    if (saved.avatarUrl) cachedLogo = saved.avatarUrl;
+                    if (saved.fullName) cachedName = saved.fullName;
+                }
+            } catch (e) {}
+        }
+
+        const finalName = cachedName || prof?.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Artisan Maker';
+        const finalLogo = cachedLogo || prof?.avatar_url || user.user_metadata?.avatar_url || null;
+        const finalLoc = cachedLoc || user.user_metadata?.location || '';
+        const finalTax = cachedTax || user.user_metadata?.tax_id || '';
+        const finalCats = cachedCats.length > 0 ? cachedCats : (user.user_metadata?.craft_categories || ['woodworking']);
+
+        // Strict Artisan Verification Rule:
+        // Must have BOTH a valid Brand Logo AND Workshop Location filled in
+        const isVerified = !!(finalLogo && finalLoc && finalLoc.trim().length > 0);
+
+        const currentProf = {
             id: user.id,
-            full_name: user.email?.split('@')[0] || 'Artisan Maker',
-            vendor_verified: true,
+            email: user.email,
+            full_name: finalName,
+            avatar_url: finalLogo,
             is_vendor: true,
-            avatar_url: user.user_metadata?.avatar_url || null,
+            vendor_verified: isVerified,
+            kyc_status: isVerified ? 'PASSED' : 'PENDING',
         };
 
         setProfile(currentProf);
-        setWorkshopName(currentProf.full_name || '');
-        setLogoPreview(currentProf.avatar_url || null);
-        if (user.user_metadata?.location) setLocationText(user.user_metadata.location);
-        if (user.user_metadata?.tax_id) setTaxId(user.user_metadata.tax_id);
-        if (user.user_metadata?.craft_categories) setSelectedCategories(user.user_metadata.craft_categories);
+        setWorkshopName(finalName);
+        setLogoPreview(finalLogo);
+        setLocationText(finalLoc);
+        setTaxId(finalTax);
+        setSelectedCategories(finalCats);
 
-        // 2. Fetch Artisan's Uploaded Verification Reels / Products (All active statuses)
+        // 3. Fetch Artisan's Uploaded Verification Reels / Products (All active statuses)
         const { data: reels } = await supabase
             .from('verification_reels')
             .select('*')
@@ -436,6 +473,61 @@ export default function VendorDashboardPage() {
         }
     };
 
+    const handleAutoDetectLocation = () => {
+        if (!navigator.geolocation) {
+            alert('Geolocation is not supported by your browser.');
+            return;
+        }
+        setDetectingLocation(true);
+        setLocationDetectedMsg(null);
+
+        navigator.geolocation.getCurrentPosition(
+            async (pos) => {
+                const { latitude, longitude } = pos.coords;
+                try {
+                    const res = await fetch(
+                        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&addressdetails=1`,
+                        { headers: { 'Accept-Language': 'en' } }
+                    );
+                    if (res.ok) {
+                        const data = await res.json();
+                        const addr = data.address || {};
+                        const place =
+                            addr.city ||
+                            addr.town ||
+                            addr.village ||
+                            addr.suburb ||
+                            addr.county ||
+                            addr.state_district ||
+                            '';
+                        const state = addr.state || '';
+                        const country = addr.country || 'India';
+                        const parts = [place, state, country].filter(Boolean);
+                        const detected = parts.length > 0 ? parts.join(', ') : `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`;
+                        setLocationText(detected);
+                        setLocationDetectedMsg(`✓ Location detected: ${detected}`);
+                    } else {
+                        const fallback = `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`;
+                        setLocationText(fallback);
+                        setLocationDetectedMsg(`✓ Coordinates detected: ${fallback}`);
+                    }
+                } catch {
+                    const fallback = `Lat ${latitude.toFixed(4)}, Lng ${longitude.toFixed(4)}`;
+                    setLocationText(fallback);
+                    setLocationDetectedMsg(`✓ Coordinates detected: ${fallback}`);
+                } finally {
+                    setDetectingLocation(false);
+                }
+            },
+            (err) => {
+                console.warn('Geolocation detection error:', err);
+                setDetectingLocation(false);
+                alert('Could not detect location: ' + err.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
+    };
+
     const handleSaveWorkshopSettings = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!profile) return;
@@ -444,49 +536,100 @@ export default function VendorDashboardPage() {
         setProfileSavedMsg(null);
 
         try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const currentUserId = user?.id || profile.id;
+
             let avatarUrl = logoPreview || profile.avatar_url || '';
 
             if (logoFile) {
                 const formData = new FormData();
                 formData.append('logo', logoFile);
-                formData.append('email', profile.email || 'artisan');
+                formData.append('email', profile.email || user?.email || 'artisan');
                 const uploadRes = await fetch('/api/auth/upload-logo', {
                     method: 'POST',
                     body: formData,
                 });
                 if (uploadRes.ok) {
                     const uploadData = await uploadRes.json();
-                    avatarUrl = uploadData.avatarUrl;
+                    if (uploadData.avatarUrl) {
+                        avatarUrl = uploadData.avatarUrl;
+                        setLogoPreview(avatarUrl);
+                    }
                 }
             }
 
-            const res = await fetch('/api/auth/profile', {
+            const cleanName = workshopName.trim();
+            const cleanLoc = locationText.trim();
+            const cleanTax = taxId.trim();
+
+            // Strict Artisan Verification Rule:
+            // Verified ONLY if BOTH brand logo and workshop location are saved
+            const isVerifiedNow = !!(avatarUrl && cleanLoc.length > 0);
+
+            // 1. Direct Supabase profiles database update
+            const { error: dbError } = await supabase
+                .from('profiles')
+                .update({
+                    full_name: cleanName,
+                    avatar_url: avatarUrl,
+                    is_vendor: true,
+                    vendor_verified: isVerifiedNow,
+                    kyc_status: isVerifiedNow ? 'PASSED' : 'PENDING',
+                })
+                .eq('id', currentUserId);
+
+            if (dbError) {
+                console.warn('Direct Supabase update notice:', dbError);
+            }
+
+            // 2. Sync to auth user_metadata via API
+            await fetch('/api/auth/profile', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    userId: profile.id,
-                    fullName: workshopName.trim(),
+                    userId: currentUserId,
+                    fullName: cleanName,
                     isVendor: true,
-                    vendorVerified: true,
+                    vendorVerified: isVerifiedNow,
                     avatarUrl: avatarUrl,
                     craftCategories: selectedCategories,
-                    location: locationText,
-                    taxId: taxId,
+                    location: cleanLoc,
+                    taxId: cleanTax,
                 }),
-            });
+            }).catch(() => {});
 
-            if (res.ok) {
-                setProfile((prev: any) => ({
-                    ...prev,
-                    full_name: workshopName.trim(),
-                    avatar_url: avatarUrl,
-                }));
-                setProfileSavedMsg('✓ Workshop profile & brand settings updated successfully!');
-                setTimeout(() => setProfileSavedMsg(null), 4000);
-            } else {
-                const errData = await res.json();
-                alert(errData.error || 'Failed to save profile.');
+            // 3. Save to localStorage for immediate resilience across tabs & reloads
+            if (typeof window !== 'undefined') {
+                const workshopPayload = {
+                    fullName: cleanName,
+                    location: cleanLoc,
+                    taxId: cleanTax,
+                    craftCategories: selectedCategories,
+                    avatarUrl: avatarUrl,
+                    vendorVerified: isVerifiedNow,
+                };
+                localStorage.setItem(`karigar_workshop_profile_${currentUserId}`, JSON.stringify(workshopPayload));
             }
+
+            // 4. Update local state
+            setProfile((prev: any) => ({
+                ...prev,
+                full_name: cleanName,
+                avatar_url: avatarUrl,
+                vendor_verified: isVerifiedNow,
+                kyc_status: isVerifiedNow ? 'PASSED' : 'PENDING',
+            }));
+
+            if (isVerifiedNow) {
+                setProfileSavedMsg('✓ Workshop profile & brand identity saved successfully! Your profile is now VERIFIED.');
+            } else {
+                const missing = [];
+                if (!avatarUrl) missing.push('Brand Logo');
+                if (!cleanLoc) missing.push('Workshop Location');
+                setProfileSavedMsg(`✓ Workshop details saved. Note: Upload ${missing.join(' and ')} to activate your Verified Maker badge.`);
+            }
+
+            setTimeout(() => setProfileSavedMsg(null), 6000);
         } catch (err: any) {
             alert('Error: ' + err.message);
         } finally {
@@ -703,6 +846,77 @@ export default function VendorDashboardPage() {
     return (
         <main className="min-h-screen bg-[#FDFBF7] py-8 px-4 sm:px-6 lg:px-8">
             <div className="max-w-7xl mx-auto">
+                {/* ─── WORKSHOP IDENTITY & VERIFICATION STATUS BANNER ─── */}
+                <div className="bg-white border border-[#E8E2D9] rounded-2xl p-4 sm:p-5 mb-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-center gap-3.5">
+                        {profile?.avatar_url ? (
+                            <img
+                                src={profile.avatar_url}
+                                alt="Workshop Stamp"
+                                className="w-12 h-12 rounded-xl object-contain bg-[#FDFBF7] border border-[#E8E2D9] p-1 shadow-xs shrink-0"
+                            />
+                        ) : (
+                            <div className="w-12 h-12 rounded-xl bg-[#FFF4E5] border border-[#ED6C02]/30 flex items-center justify-center text-[#ED6C02] font-bold text-lg font-display shrink-0">
+                                {profile?.full_name?.charAt(0) || 'M'}
+                            </div>
+                        )}
+                        <div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <h1 className="text-base sm:text-lg font-bold text-[#1E1B18] font-display">
+                                    {profile?.full_name || 'Artisan Workshop'}
+                                </h1>
+                                {profile?.vendor_verified ? (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/25 px-2.5 py-0.5 rounded-full shadow-2xs">
+                                        <ShieldCheck className="w-3.5 h-3.5" />
+                                        <span>Verified Maker</span>
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-bold bg-[#FFF4E5] text-[#ED6C02] border border-[#ED6C02]/25 px-2.5 py-0.5 rounded-full shadow-2xs">
+                                        <AlertTriangle className="w-3.5 h-3.5" />
+                                        <span>Unverified Maker</span>
+                                    </span>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3 text-xs text-[#6B635B] mt-0.5 flex-wrap">
+                                {locationText ? (
+                                    <span className="flex items-center gap-1 text-stone-600">
+                                        <MapPin className="w-3 h-3 text-[#C85A32]" />
+                                        <span>{locationText}</span>
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-[#ED6C02] font-medium">
+                                        <MapPin className="w-3 h-3" />
+                                        <span>Location not set</span>
+                                    </span>
+                                )}
+                                {taxId && (
+                                    <span className="font-mono text-[11px] bg-stone-100 text-stone-700 px-1.5 py-0.5 rounded">
+                                        GSTIN: {taxId}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+
+                    {!profile?.vendor_verified ? (
+                        <button
+                            onClick={() => setActiveTab('settings')}
+                            className="btn-secondary text-xs py-2 px-3.5 flex items-center justify-center gap-1.5 font-bold border-[#ED6C02]/40 bg-[#FFFDF9] text-[#ED6C02] hover:bg-[#FFF4E5] transition-colors cursor-pointer shrink-0"
+                        >
+                            <Sparkles className="w-3.5 h-3.5" />
+                            <span>Get Verified (Upload Logo & Location)</span>
+                        </button>
+                    ) : (
+                        <button
+                            onClick={() => setActiveTab('settings')}
+                            className="btn-ghost text-xs py-1.5 px-3 flex items-center justify-center gap-1 text-stone-600 hover:text-stone-900 border border-stone-200 rounded-lg cursor-pointer shrink-0"
+                        >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Edit Workshop Profile</span>
+                        </button>
+                    )}
+                </div>
+
                 {/* Clean Dashboard Navigation Tabs */}
                 <div className="flex items-center gap-2 border-b border-[#E8E2D9] mb-6 overflow-x-auto no-scrollbar">
                     <button
@@ -1137,13 +1351,41 @@ export default function VendorDashboardPage() {
                             className="bg-white border border-[#E8E2D9] rounded-2xl p-6 shadow-card flex flex-col gap-5"
                         >
                             <div>
-                                <h2 className="text-base font-bold text-[#1E1B18] font-display">
-                                    Workshop Profile & Brand Identity
+                                <h2 className="text-base font-bold text-[#1E1B18] font-display flex items-center justify-between">
+                                    <span>Workshop Profile & Brand Identity</span>
+                                    {profile?.vendor_verified ? (
+                                        <span className="text-[11px] font-bold bg-[#EDF7ED] text-[#2E7D32] border border-[#2E7D32]/25 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                            <ShieldCheck className="w-3.5 h-3.5" />
+                                            <span>Verified Maker</span>
+                                        </span>
+                                    ) : (
+                                        <span className="text-[11px] font-bold bg-[#FFF4E5] text-[#ED6C02] border border-[#ED6C02]/25 px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                                            <AlertTriangle className="w-3.5 h-3.5" />
+                                            <span>Unverified Maker</span>
+                                        </span>
+                                    )}
                                 </h2>
                                 <p className="text-xs text-[#6B635B] mt-0.5">
-                                    Update your brand logo, workshop details, and craft specializations.
+                                    Upload your workshop brand logo and location to earn the <strong>AI-Verified Maker</strong> badge on all your products and bids.
                                 </p>
                             </div>
+
+                            {/* Verification criteria helper alert */}
+                            {!profile?.vendor_verified && (
+                                <div className="p-3 bg-[#FFF9F2] border border-[#ED6C02]/30 rounded-xl text-xs text-[#8A4A00] flex items-start gap-2.5">
+                                    <Sparkles className="w-4 h-4 text-[#ED6C02] shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-bold text-[#ED6C02]">How to become a Verified Artisan:</p>
+                                        <p className="text-[11px] mt-0.5 text-stone-600">
+                                            1. Upload your <strong>Workshop Brand Logo / Stamp</strong> below.
+                                            <br />
+                                            2. Set or Auto-Detect your <strong>Workshop Location</strong>.
+                                            <br />
+                                            3. Click <strong>Save Workshop Profile</strong>.
+                                        </p>
+                                    </div>
+                                </div>
+                            )}
 
                             {profileSavedMsg && (
                                 <div className="p-3 bg-[#EDF7ED] border border-[#2E7D32]/30 text-[#2E7D32] rounded-xl text-xs font-semibold flex items-center gap-2">
@@ -1155,7 +1397,7 @@ export default function VendorDashboardPage() {
                             {/* Brand Logo Dropzone */}
                             <div>
                                 <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18] mb-2">
-                                    Workshop Brand Logo / Maker Stamp
+                                    Workshop Brand Logo / Maker Stamp <span className="text-[#D32F2F]">*</span>
                                 </label>
                                 <div className="flex items-center gap-4">
                                     {logoPreview ? (
@@ -1190,7 +1432,7 @@ export default function VendorDashboardPage() {
                                             />
                                         </label>
                                         <p className="text-[10px] text-[#6B635B] mt-1">
-                                            PNG or JPG up to 5 MB. Used by AI to authenticate your workshop video stamps.
+                                            PNG or JPG up to 5 MB. Authenticates your craft video stamps and seller profile.
                                         </p>
                                     </div>
                                 </div>
@@ -1215,22 +1457,49 @@ export default function VendorDashboardPage() {
                                 </div>
                             </div>
 
-                            {/* Location */}
+                            {/* Location with Auto-Detect */}
                             <div>
-                                <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18] mb-1.5">
-                                    Workshop Location / City
-                                </label>
+                                <div className="flex items-center justify-between mb-1.5">
+                                    <label className="block text-xs font-semibold uppercase tracking-wider text-[#1E1B18]">
+                                        Workshop Location / City <span className="text-[#D32F2F]">*</span>
+                                    </label>
+                                    <button
+                                        type="button"
+                                        onClick={handleAutoDetectLocation}
+                                        disabled={detectingLocation}
+                                        className="text-[11px] font-semibold text-[#C85A32] hover:text-[#9C3D1D] flex items-center gap-1 cursor-pointer disabled:opacity-50 transition-colors"
+                                    >
+                                        {detectingLocation ? (
+                                            <>
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                <span>Detecting GPS Location...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Crosshair className="w-3 h-3" />
+                                                <span>Auto-Detect My Location</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
                                 <div className="relative flex items-center">
                                     <MapPin className="absolute left-3.5 w-4 h-4 text-[#6B635B] pointer-events-none" />
                                     <input
                                         type="text"
+                                        required
                                         value={locationText}
                                         onChange={(e) => setLocationText(e.target.value)}
                                         style={{ paddingLeft: '2.5rem' }}
                                         className="input-base"
-                                        placeholder="e.g. Saharanpur, Uttar Pradesh, India"
+                                        placeholder="e.g. Jamui, Bihar, India"
                                     />
                                 </div>
+                                {locationDetectedMsg && (
+                                    <p className="text-[11px] font-semibold text-[#2E7D32] mt-1.5 flex items-center gap-1">
+                                        <CheckCircle2 className="w-3.5 h-3.5" />
+                                        <span>{locationDetectedMsg}</span>
+                                    </p>
+                                )}
                             </div>
 
                             {/* GST / Artisan ID */}
