@@ -10,22 +10,46 @@ import Link from 'next/link';
 export default function ReelUploadPage() {
     const supabase = createClient();
     const router = useRouter();
+    const [user, setUser] = useState<any>(null);
     const [profile, setProfile] = useState<any>(null);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         const fetchProfile = async () => {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-                router.push('/login?next=/verification/upload');
+            // 1. Check local session (fast)
+            const { data: { session } } = await supabase.auth.getSession();
+            let authUser = session?.user;
+
+            // 2. Fallback to getUser()
+            if (!authUser) {
+                const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+                authUser = data?.user;
+            }
+
+            // 3. Grace period for cookie / localStorage hydration
+            if (!authUser) {
+                await new Promise((r) => setTimeout(r, 600));
+                const { data: { session: retrySession } } = await supabase.auth.getSession();
+                authUser = retrySession?.user;
+            }
+
+            if (!authUser) {
+                if (isMounted) {
+                    setLoading(false);
+                }
                 return;
             }
+
+            if (!isMounted) return;
+            setUser(authUser);
 
             // 1. Check database profile
             const { data: prof } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', user.id)
+                .eq('id', authUser.id)
                 .maybeSingle();
 
             if (prof && prof.avatar_url) {
@@ -33,8 +57,8 @@ export default function ReelUploadPage() {
             } else {
                 // Fallback to user metadata
                 setProfile({
-                    full_name: prof?.full_name || user.user_metadata?.full_name || 'Maker Workshop',
-                    avatar_url: user.user_metadata?.avatar_url || prof?.avatar_url || null,
+                    full_name: prof?.full_name || authUser.user_metadata?.full_name || 'Maker Workshop',
+                    avatar_url: authUser.user_metadata?.avatar_url || prof?.avatar_url || null,
                     is_vendor: true,
                 });
             }
@@ -42,7 +66,52 @@ export default function ReelUploadPage() {
         };
 
         fetchProfile();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user && isMounted) {
+                fetchProfile();
+            }
+        });
+
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
+
+    if (loading) {
+        return (
+            <main className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
+                <p className="text-xs text-[#6B635B] animate-pulse-subtle">Loading video verification...</p>
+            </main>
+        );
+    }
+
+    if (!user) {
+        return (
+            <main className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6">
+                <div className="p-8 max-w-md w-full text-center flex flex-col items-center gap-4 bg-white border border-[#E8E2D9] rounded-2xl shadow-card">
+                    <div className="w-14 h-14 rounded-2xl bg-[#C85A32]/10 text-[#C85A32] flex items-center justify-center">
+                        <ShieldCheck className="w-7 h-7" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-stone-900 font-display">
+                            Artisan Sign In Required
+                        </h2>
+                        <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                            Sign in to your maker account to upload reel videos and verify products with our AI Vision Pipeline.
+                        </p>
+                    </div>
+                    <Link
+                        href="/login?next=/verification/upload"
+                        className="btn-primary w-full py-3 text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 rounded-xl"
+                    >
+                        <span>Sign In to Upload</span>
+                    </Link>
+                </div>
+            </main>
+        );
+    }
 
     return (
         <main className="min-h-screen bg-[#FDFBF7] flex flex-col items-center py-10 px-4 sm:px-6">

@@ -26,26 +26,9 @@ export async function middleware(request: NextRequest) {
         }
     );
 
+    // Refresh session and cookie tokens
     const { data: { user } } = await supabase.auth.getUser();
-
     const pathname = request.nextUrl.pathname;
-
-    // 1. If user is already logged in and visits /login or /auth, redirect to requested next route or artisan/profile
-    if ((pathname === '/login' || pathname === '/auth') && user) {
-        const nextUrl = request.nextUrl.searchParams.get('next');
-        if (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login') && !nextUrl.startsWith('/auth')) {
-            return NextResponse.redirect(new URL(nextUrl, request.url));
-        }
-
-        const { data: profile } = await supabase
-            .from('profiles')
-            .select('is_vendor')
-            .eq('id', user.id)
-            .maybeSingle();
-
-        const dest = profile?.is_vendor ? '/artisan' : '/profile';
-        return NextResponse.redirect(new URL(dest, request.url));
-    }
 
     // 2. Admin Route Protection: Block non-admin access to /triage
     if (pathname.startsWith('/triage') && user) {

@@ -33,7 +33,19 @@ export default function ProfilePage() {
     const [statusMsg, setStatusMsg] = useState('');
 
     useEffect(() => {
+        let isMounted = true;
         loadProfile();
+
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user && isMounted) {
+                loadProfile();
+            }
+        });
+
+        return () => {
+            isMounted = false;
+            subscription.unsubscribe();
+        };
     }, []);
 
     const loadProfile = async () => {
@@ -57,7 +69,7 @@ export default function ProfilePage() {
         }
 
         if (!authUser) {
-            router.push('/login?next=/profile');
+            setLoading(false);
             return;
         }
 
@@ -167,6 +179,33 @@ export default function ProfilePage() {
         return (
             <main className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
                 <p className="text-xs text-[#6B635B] animate-pulse-subtle">Loading profile...</p>
+            </main>
+        );
+    }
+
+    if (!user) {
+        return (
+            <main className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6">
+                <div className="p-8 max-w-md w-full text-center flex flex-col items-center gap-4 bg-white border border-[#E8E2D9] rounded-2xl shadow-card">
+                    <div className="w-14 h-14 rounded-2xl bg-[#C85A32]/10 text-[#C85A32] flex items-center justify-center">
+                        <User className="w-7 h-7" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-stone-900 font-display">
+                            Profile Sign In Required
+                        </h2>
+                        <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                            Sign in to view your orders, customize delivery settings, and manage your account details.
+                        </p>
+                    </div>
+                    <Link
+                        href="/login?next=/profile"
+                        className="btn-primary w-full py-3 text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 rounded-xl"
+                    >
+                        <span>Sign In to Profile</span>
+                        <ArrowRight className="w-4 h-4" />
+                    </Link>
+                </div>
             </main>
         );
     }

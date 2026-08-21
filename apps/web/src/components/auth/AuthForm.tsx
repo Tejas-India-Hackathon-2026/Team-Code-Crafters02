@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '../../lib/supabaseClient';
 import { Mail, Lock, User, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
@@ -19,6 +19,24 @@ export default function AuthForm() {
     const [loading, setLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
     const [successMsg, setSuccessMsg] = useState('');
+    const [existingUser, setExistingUser] = useState<any>(null);
+
+    useEffect(() => {
+        const checkExisting = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (session?.user) {
+                setExistingUser(session.user);
+            }
+        };
+        checkExisting();
+    }, []);
+
+    const handleSwitchAccount = async () => {
+        await supabase.auth.signOut();
+        setExistingUser(null);
+        setErrorMsg('');
+        setSuccessMsg('');
+    };
 
     const handleSignIn = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -177,6 +195,49 @@ export default function AuthForm() {
 
     return (
         <div className="w-full animate-slide-up">
+            {/* Active Session Notification */}
+            {existingUser && (
+                <div className="mb-5 p-3.5 bg-[#FDFBF7] border border-[#C85A32]/30 rounded-xl flex flex-col gap-2">
+                    <div className="flex items-center justify-between">
+                        <span className="text-[11px] font-bold uppercase tracking-wider text-[#C85A32]">
+                            Active Session Detected
+                        </span>
+                        <button
+                            type="button"
+                            onClick={handleSwitchAccount}
+                            className="text-[11px] font-semibold text-stone-500 hover:text-red-600 underline cursor-pointer"
+                        >
+                            Sign Out &amp; Switch Account
+                        </button>
+                    </div>
+                    <p className="text-xs text-stone-700">
+                        Signed in as <strong>{existingUser.email}</strong>
+                    </p>
+                    <div className="flex gap-2 mt-1">
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const next = searchParams?.get('next');
+                                window.location.href = (next && next.startsWith('/') && !next.startsWith('/login')) ? next : '/artisan';
+                            }}
+                            className="btn-primary py-1.5 px-3 text-xs font-semibold rounded-lg flex-1 flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                            <span>Go to Artisan Hub</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                window.location.href = '/dashboard';
+                            }}
+                            className="btn-ghost py-1.5 px-3 text-xs font-semibold rounded-lg border border-stone-200 text-stone-700 hover:bg-stone-100 cursor-pointer"
+                        >
+                            Dashboard
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Mode Switcher Tabs */}
             <div className="flex mb-6 bg-[#F3EFEA] rounded-lg p-1">
                 <button

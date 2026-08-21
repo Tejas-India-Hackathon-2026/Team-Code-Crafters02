@@ -53,7 +53,7 @@ export default function ArtisanWelcomePage() {
 
             if (!authUser) {
                 if (isMounted) {
-                    router.push('/login?next=/artisan');
+                    setLoading(false);
                 }
                 return;
             }
@@ -98,8 +98,16 @@ export default function ArtisanWelcomePage() {
 
         checkArtisan();
 
+        // Listen for session hydration
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            if (session?.user && isMounted) {
+                checkArtisan();
+            }
+        });
+
         return () => {
             isMounted = false;
+            subscription.unsubscribe();
         };
     }, []);
 
@@ -107,6 +115,33 @@ export default function ArtisanWelcomePage() {
         return (
             <main className="min-h-screen bg-[#FDFBF7] flex items-center justify-center">
                 <p className="text-xs text-[#6B635B] animate-pulse-subtle">Loading Artisan Portal...</p>
+            </main>
+        );
+    }
+
+    if (!user) {
+        return (
+            <main className="min-h-screen bg-[#FAF7F2] flex items-center justify-center p-6">
+                <KintoCard glow className="p-8 max-w-md w-full text-center flex flex-col items-center gap-4 border border-[#E8E2D9] bg-white rounded-2xl shadow-card">
+                    <div className="w-14 h-14 rounded-2xl bg-[#C85A32]/10 text-[#C85A32] flex items-center justify-center">
+                        <ShieldCheck className="w-7 h-7" />
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-bold text-stone-900 font-display">
+                            Artisan Portal Sign In Required
+                        </h2>
+                        <p className="text-xs text-stone-600 mt-1.5 leading-relaxed">
+                            Sign in or create an artisan maker account to manage your workshop reels, buyer orders, and custom commissions.
+                        </p>
+                    </div>
+                    <Link
+                        href="/login?next=/artisan"
+                        className="btn-primary w-full py-3 text-xs uppercase tracking-wider font-semibold flex items-center justify-center gap-2 rounded-xl"
+                    >
+                        <span>Sign In to Artisan Mode</span>
+                        <ArrowRight className="w-4 h-4" />
+                    </Link>
+                </KintoCard>
             </main>
         );
     }
