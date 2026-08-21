@@ -40,8 +40,8 @@ export async function POST(
                 reviewed_by: adminId || null,
             })
             .eq('id', reelId)
-            .select('*, vendor:profiles!verification_reels_vendor_id_fkey(id, full_name, avatar_url, vendor_verified)')
-            .single();
+            .select('id, vendor_id, status')
+            .maybeSingle();
 
         if (reelError) {
             console.error('Error updating verification reel decision:', reelError);
