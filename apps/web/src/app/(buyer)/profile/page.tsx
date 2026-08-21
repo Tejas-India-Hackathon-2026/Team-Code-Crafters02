@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../../lib/supabaseClient';
+import { getKarigarAuthUser, clearKarigarAuth } from '../../../lib/authHelper';
 import {
     User,
     Mail,
@@ -51,22 +52,7 @@ export default function ProfilePage() {
     const loadProfile = async () => {
         setLoading(true);
 
-        // 1. Check local session (fast)
-        const { data: { session } } = await supabase.auth.getSession();
-        let authUser = session?.user;
-
-        // 2. Fallback to getUser()
-        if (!authUser) {
-            const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-            authUser = data?.user;
-        }
-
-        // 3. Grace period for cookie / localStorage hydration
-        if (!authUser) {
-            await new Promise((r) => setTimeout(r, 600));
-            const { data: { session: retrySession } } = await supabase.auth.getSession();
-            authUser = retrySession?.user;
-        }
+        const authUser = await getKarigarAuthUser(supabase);
 
         if (!authUser) {
             setLoading(false);
@@ -171,8 +157,9 @@ export default function ProfilePage() {
     };
 
     const handleSignOut = async () => {
+        clearKarigarAuth();
         await supabase.auth.signOut();
-        router.push('/login');
+        window.location.href = '/login';
     };
 
     if (loading) {

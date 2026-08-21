@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { createClient } from '../../lib/supabaseClient';
+import { getKarigarAuthUser, clearKarigarAuth } from '../../lib/authHelper';
 import {
     Home,
     FolderOpen,
@@ -41,8 +42,7 @@ export default function Navbar() {
 
     useEffect(() => {
         const fetchProfile = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            const user = session?.user;
+            const user = await getKarigarAuthUser(supabase);
 
             if (user) {
                 const defaultProfile: UserProfile = {
@@ -72,17 +72,14 @@ export default function Navbar() {
         fetchProfile();
 
         const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-            if (session?.user) {
-                fetchProfile();
-            } else {
-                setProfile(null);
-            }
+            fetchProfile();
         });
 
         return () => subscription.unsubscribe();
     }, []);
 
     const handleSignOut = async () => {
+        clearKarigarAuth();
         await supabase.auth.signOut();
         setProfile(null);
         window.location.href = '/login';

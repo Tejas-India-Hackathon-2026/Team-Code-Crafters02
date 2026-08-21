@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '../../lib/supabaseClient';
+import { storeKarigarSession, clearKarigarAuth, getKarigarAuthUser } from '../../lib/authHelper';
 import { Mail, Lock, User, Eye, EyeOff, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function AuthForm() {
@@ -23,15 +24,16 @@ export default function AuthForm() {
 
     useEffect(() => {
         const checkExisting = async () => {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (session?.user) {
-                setExistingUser(session.user);
+            const user = await getKarigarAuthUser(supabase);
+            if (user) {
+                setExistingUser(user);
             }
         };
         checkExisting();
     }, []);
 
     const handleSwitchAccount = async () => {
+        clearKarigarAuth();
         await supabase.auth.signOut();
         setExistingUser(null);
         setErrorMsg('');
@@ -61,7 +63,7 @@ export default function AuthForm() {
             });
 
             if (!error && data?.user) {
-                // Ensure session is populated
+                storeKarigarSession(data.session, data.user);
                 await supabase.auth.getSession();
 
                 const { data: prof } = await supabase
@@ -91,25 +93,32 @@ export default function AuthForm() {
             const loginData = await res.json();
 
             if (loginData.success) {
-                // Retry client signIn now that account is synchronized
-                const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
+                if (loginData.session) {
+                    try {
+                        await supabase.auth.setSession({
+                            access_token: loginData.session.access_token,
+                            refresh_token: loginData.session.refresh_token,
+                        });
+                    } catch (e) {}
+                }
+                storeKarigarSession(loginData.session, loginData.user);
+
+                // Retry client signIn to guarantee cookie registration
+                const { data: retryData } = await supabase.auth.signInWithPassword({
                     email: cleanEmail,
                     password: cleanPassword,
                 });
 
-                if (!retryError && retryData?.user) {
-                    await supabase.auth.getSession();
-                    const nextUrl = searchParams?.get('next');
-                    const dest = (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login'))
-                        ? nextUrl
-                        : (loginData.isVendor ? '/artisan' : '/profile');
-                    window.location.href = dest;
-                    return;
-                } else {
-                    setErrorMsg(retryError?.message || 'Sign in could not be completed. Please check your credentials.');
-                    setLoading(false);
-                    return;
+                if (retryData?.session) {
+                    storeKarigarSession(retryData.session, retryData.user);
                 }
+
+                const nextUrl = searchParams?.get('next');
+                const dest = (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login'))
+                    ? nextUrl
+                    : (loginData.isVendor ? '/artisan' : '/profile');
+                window.location.href = dest;
+                return;
             }
 
             if (loginData.notFound) {
@@ -174,10 +183,20 @@ export default function AuthForm() {
             }
 
             // 2. Sign in immediately on client
-            const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            const { data: signInData } = await supabase.auth.signInWithPassword({
                 email: cleanEmail,
                 password: cleanPassword,
             });
+
+            if (signInData?.session) {
+                storeKarigarSession(signInData.session, signInData.user);
+            } else if (regData.userId) {
+                storeKarigarSession(null, {
+                    id: regData.userId,
+                    email: cleanEmail,
+                    user_metadata: { full_name: cleanFullName, is_vendor: isArtisan },
+                });
+            }
 
             await supabase.auth.getSession();
 

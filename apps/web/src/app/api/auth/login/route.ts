@@ -67,7 +67,18 @@ export async function POST(request: Request) {
             });
         }
 
-        // 3. Fetch profile to check vendor/buyer status
+        // 3. Authenticate with client credentials to produce active session tokens
+        const anonClient = createClient(
+            process.env.NEXT_PUBLIC_SUPABASE_URL!,
+            process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+        );
+
+        const { data: authData } = await anonClient.auth.signInWithPassword({
+            email: cleanEmail,
+            password: password,
+        });
+
+        // 4. Fetch profile to check vendor/buyer status
         const { data: prof } = await supabaseAdmin
             .from('profiles')
             .select('is_vendor, full_name')
@@ -76,7 +87,8 @@ export async function POST(request: Request) {
 
         return NextResponse.json({
             success: true,
-            user: { id: foundUser.id, email: foundUser.email },
+            user: authData?.user || { id: foundUser.id, email: foundUser.email },
+            session: authData?.session || null,
             isVendor: prof?.is_vendor ?? true,
             profile: prof,
             message: 'User authenticated and confirmed successfully.',

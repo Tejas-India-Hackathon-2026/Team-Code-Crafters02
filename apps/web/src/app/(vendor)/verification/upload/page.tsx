@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '../../../../lib/supabaseClient';
+import { getKarigarAuthUser } from '../../../../lib/authHelper';
 import ReelUploader from '../../../../components/media/ReelUploader';
 import { ShieldCheck, Palette, Edit3, CheckCircle2, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
@@ -18,22 +19,7 @@ export default function ReelUploadPage() {
         let isMounted = true;
 
         const fetchProfile = async () => {
-            // 1. Check local session (fast)
-            const { data: { session } } = await supabase.auth.getSession();
-            let authUser = session?.user;
-
-            // 2. Fallback to getUser()
-            if (!authUser) {
-                const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
-                authUser = data?.user;
-            }
-
-            // 3. Grace period for cookie / localStorage hydration
-            if (!authUser) {
-                await new Promise((r) => setTimeout(r, 600));
-                const { data: { session: retrySession } } = await supabase.auth.getSession();
-                authUser = retrySession?.user;
-            }
+            const authUser = await getKarigarAuthUser(supabase);
 
             if (!authUser) {
                 if (isMounted) {
