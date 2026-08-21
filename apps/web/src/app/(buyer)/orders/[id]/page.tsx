@@ -52,7 +52,7 @@ export default function OrderTrackingPage() {
         try {
             const { data } = await supabase
                 .from('escrow_orders')
-                .select('*, project:custom_projects(title), vendor:profiles(full_name)')
+                .select('*, project:custom_projects(title), vendor:profiles!escrow_orders_vendor_id_fkey(full_name)')
                 .eq('id', orderId)
                 .maybeSingle();
 
