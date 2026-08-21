@@ -3,7 +3,7 @@ import BiddingDrawer from '../../../../components/projects/BiddingDrawer';
 import ProjectProposalsList from '../../../../components/projects/ProjectProposalsList';
 import NearbyMakersMap from '../../../../components/map/NearbyMakersMap';
 import ProjectOwnerActions from '../../../../components/projects/ProjectOwnerActions';
-import { Calendar, DollarSign, User, ArrowLeft } from 'lucide-react';
+import { Calendar, User, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 
 interface ProjectPageProps {
@@ -123,9 +123,9 @@ export default async function ProjectDetailPage({ params }: ProjectPageProps) {
 
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6 pt-4 border-t border-[#E8E2D9]">
                         <div className="flex items-center gap-2">
-                            <DollarSign className="w-4 h-4 text-[#C85A32]" />
-                            <span className="text-xs text-[#1E1B18] font-medium">
-                                ₹{project.budget_min?.toLocaleString('en-IN')} – ₹{project.budget_max?.toLocaleString('en-IN')}
+                            <span className="text-sm font-bold text-[#C85A32] font-mono">₹</span>
+                            <span className="text-xs text-[#1E1B18] font-medium font-mono">
+                                {project.budget_min?.toLocaleString('en-IN')} – ₹{project.budget_max?.toLocaleString('en-IN')}
                             </span>
                         </div>
                         <div className="flex items-center gap-2">

@@ -19,12 +19,14 @@ import { AnimatedNumber } from '../components/ui/animated-number';
 import { KintoCard, KintoBadge } from '../components/ui/kinto-card';
 
 const FEATURED_CATEGORIES = [
-    { id: 'pottery', label: 'Pottery & Ceramics', index: '01', icon: '🏺', reelsCount: '18 Reels', desc: 'Wheel-thrown clay urlis & terracotta studio decor' },
-    { id: 'woodworking', label: 'Woodworking & Carving', index: '02', icon: '🪵', reelsCount: '24 Reels', desc: 'Hand-chiseled Sheesham & Teak furniture with brass inlay' },
-    { id: 'handloom', label: 'Handloom & Textiles', index: '03', icon: '🧵', reelsCount: '32 Reels', desc: 'Varanasi pure silk & Chanderi pit-loom weaves' },
-    { id: 'metalcraft', label: 'Metalcraft & Brassware', index: '04', icon: '🪚', reelsCount: '15 Reels', desc: 'Moradabad beaten brass & temple bell metal art' },
-    { id: 'jewelry', label: 'Handmade Jewelry', index: '05', icon: '💍', reelsCount: '29 Reels', desc: 'Kundan Meenakari & Jaipur gemstone silver' },
-    { id: 'painting', label: 'Folk Art & Painting', index: '06', icon: '🎨', reelsCount: '12 Reels', desc: 'Madhubani, Pattachitra & Pichwai canvases' },
+    { id: 'sketches', label: 'Custom Sketches & Portraits', index: '01', icon: '✏️', reelsCount: '34 Reels', desc: 'Pencil sketches, charcoal portraits & digital art' },
+    { id: 'wood_painting', label: 'Wood Pyrography & Art', index: '02', icon: '🪵', reelsCount: '28 Reels', desc: 'Hand-painted wooden planks, nameplates & coasters' },
+    { id: 'resin_floral', label: 'Resin & Floral Art', index: '03', icon: '🧪', reelsCount: '22 Reels', desc: 'Preserved flower frames, resin clocks & ocean tables' },
+    { id: 'crochet_macrame', label: 'Crochet & Macramé', index: '04', icon: '🧶', reelsCount: '31 Reels', desc: 'Boho wall hangings, plushies & handmade bags' },
+    { id: 'pottery', label: 'Pottery & Ceramics', index: '05', icon: '🏺', reelsCount: '45 Reels', desc: 'Wheel-thrown clay urlis & terracotta studio decor' },
+    { id: 'lippan_art', label: 'Lippan & Mud Mirror Art', index: '06', icon: '🪞', reelsCount: '19 Reels', desc: 'Authentic Kutch clay mirror work & mural panels' },
+    { id: 'handloom', label: 'Handloom & Textiles', index: '07', icon: '🧵', reelsCount: '38 Reels', desc: 'Varanasi pure silk & Chanderi pit-loom weaves' },
+    { id: 'candles_wax', label: 'Handmade Candles & Wax', index: '08', icon: '🕯️', reelsCount: '26 Reels', desc: 'Scented soy candles & carved aroma diffusers' },
 ];
 
 export default function HomePage(): React.ReactNode {

@@ -6,7 +6,6 @@ import {
     FolderOpen,
     Plus,
     Calendar,
-    DollarSign,
     MapPin,
     Trash2,
     CheckCircle2,
@@ -320,7 +319,6 @@ export default function ProjectsDirectoryPage() {
 
                                         <div className="flex items-center justify-between pt-3.5 border-t border-stone-100 text-xs">
                                             <div className="flex items-center gap-1 text-[#C85A32] font-mono font-bold">
-                                                <DollarSign className="w-3.5 h-3.5" />
                                                 <span>₹{proj.budget_min?.toLocaleString('en-IN')} – ₹{proj.budget_max?.toLocaleString('en-IN')}</span>
                                             </div>
                                             <div className="flex items-center gap-1 text-stone-500 font-mono text-[11px]">

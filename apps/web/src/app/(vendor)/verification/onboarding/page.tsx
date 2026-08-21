@@ -18,18 +18,28 @@ import {
 } from 'lucide-react';
 
 const CRAFT_CATEGORIES = [
-    { id: 'woodworking', label: 'Woodworking & Carving', icon: '🪵' },
+    { id: 'sketches', label: 'Custom Sketches & Portraits', icon: '✏️' },
+    { id: 'wood_painting', label: 'Wood Painting & Pyrography', icon: '🪵' },
+    { id: 'resin_floral', label: 'Resin & Floral Art', icon: '🧪' },
+    { id: 'crochet_macrame', label: 'Crochet & Macramé Decor', icon: '🧶' },
+    { id: 'candles_wax', label: 'Handmade Candles & Wax Art', icon: '🕯️' },
+    { id: 'calligraphy', label: 'Calligraphy & Hand Lettering', icon: '📜' },
+    { id: 'papercraft', label: 'Papercraft & Origami Art', icon: '📄' },
+    { id: 'folk_toys', label: 'Folk Toys & Puppetry', icon: '🪆' },
+    { id: 'lippan_art', label: 'Lippan & Mud Mirror Art', icon: '🪞' },
     { id: 'pottery', label: 'Pottery & Ceramics', icon: '🏺' },
+    { id: 'woodworking', label: 'Woodworking & Carving', icon: '🪵' },
     { id: 'handloom', label: 'Handloom & Textiles', icon: '🧵' },
     { id: 'metalcraft', label: 'Metalcraft & Brassware', icon: '🪚' },
-    { id: 'leathercraft', label: 'Leathercraft', icon: '👜' },
-    { id: 'jewelry', label: 'Handmade Jewelry', icon: '💍' },
-    { id: 'stonecraft', label: 'Stone & Marble Craft', icon: '🗿' },
+    { id: 'leathercraft', label: 'Leathercraft & Footwear', icon: '👜' },
+    { id: 'jewelry', label: 'Handmade Jewelry & Beadwork', icon: '💍' },
+    { id: 'stonecraft', label: 'Stone & Marble Inlay Craft', icon: '🗿' },
     { id: 'painting', label: 'Traditional Painting & Folk Art', icon: '🎨' },
     { id: 'bamboo', label: 'Bamboo & Cane Craft', icon: '🎋' },
     { id: 'terracotta', label: 'Terracotta & Clay Art', icon: '🪴' },
     { id: 'embroidery', label: 'Embroidery & Zardozi', icon: '🪡' },
     { id: 'glasscraft', label: 'Glass & Mosaic Craft', icon: '✨' },
+    { id: 'jute_fiber', label: 'Natural Fiber & Jute Craft', icon: '🌿' },
 ];
 
 export default function ArtisanOnboardingPage() {

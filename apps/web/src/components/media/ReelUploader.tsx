@@ -8,7 +8,6 @@ import {
     AlertCircle,
     Package,
     Tag,
-    DollarSign,
     Sparkles,
     ArrowRight,
     Clock,
@@ -18,19 +17,29 @@ import Link from 'next/link';
 import { KintoCard, KintoBadge } from '../ui/kinto-card';
 import { AnimatedNumber } from '../ui/animated-number';
 
-const CRAFT_CATEGORIES = [
-    { id: 'woodworking', label: 'Woodworking & Carving', icon: '🪵' },
+export const CRAFT_CATEGORIES = [
+    { id: 'sketches', label: 'Custom Sketches & Portraits', icon: '✏️' },
+    { id: 'wood_painting', label: 'Wood Painting & Pyrography', icon: '🪵' },
+    { id: 'resin_floral', label: 'Resin & Floral Art', icon: '🧪' },
+    { id: 'crochet_macrame', label: 'Crochet & Macramé Decor', icon: '🧶' },
+    { id: 'candles_wax', label: 'Handmade Candles & Wax Art', icon: '🕯️' },
+    { id: 'calligraphy', label: 'Calligraphy & Hand Lettering', icon: '📜' },
+    { id: 'papercraft', label: 'Papercraft & Origami Art', icon: '📄' },
+    { id: 'folk_toys', label: 'Folk Toys & Puppetry', icon: '🪆' },
+    { id: 'lippan_art', label: 'Lippan & Mud Mirror Art', icon: '🪞' },
     { id: 'pottery', label: 'Pottery & Ceramics', icon: '🏺' },
+    { id: 'woodworking', label: 'Woodworking & Carving', icon: '🪵' },
     { id: 'handloom', label: 'Handloom & Textiles', icon: '🧵' },
     { id: 'metalcraft', label: 'Metalcraft & Brassware', icon: '🪚' },
-    { id: 'leathercraft', label: 'Leathercraft', icon: '👜' },
-    { id: 'jewelry', label: 'Handmade Jewelry', icon: '💍' },
-    { id: 'stonecraft', label: 'Stone & Marble Craft', icon: '🗿' },
+    { id: 'leathercraft', label: 'Leathercraft & Footwear', icon: '👜' },
+    { id: 'jewelry', label: 'Handmade Jewelry & Beadwork', icon: '💍' },
+    { id: 'stonecraft', label: 'Stone & Marble Inlay Craft', icon: '🗿' },
     { id: 'painting', label: 'Traditional Painting & Folk Art', icon: '🎨' },
     { id: 'bamboo', label: 'Bamboo & Cane Craft', icon: '🎋' },
     { id: 'terracotta', label: 'Terracotta & Clay Art', icon: '🪴' },
     { id: 'embroidery', label: 'Embroidery & Zardozi', icon: '🪡' },
     { id: 'glasscraft', label: 'Glass & Mosaic Craft', icon: '✨' },
+    { id: 'jute_fiber', label: 'Natural Fiber & Jute Craft', icon: '🌿' },
 ];
 
 export interface ReelUploaderProps { defaultCategory?: string }
@@ -41,7 +50,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
     const [user, setUser] = useState<any>(null);
     const [file, setFile] = useState<File | null>(null);
     const [productTitle, setProductTitle] = useState('');
-    const [category, setCategory] = useState(defaultCategory || 'woodworking');
+    const [category, setCategory] = useState(defaultCategory || 'sketches');
     const [price, setPrice] = useState('');
     const [description, setDescription] = useState('');
     const [progress, setProgress] = useState<number>(0);
@@ -335,7 +344,7 @@ export default function ReelUploader({ defaultCategory }: ReelUploaderProps): Re
                             Price (INR ₹)
                         </label>
                         <div className="relative flex items-center">
-                            <DollarSign className="absolute left-3.5 w-4 h-4 text-stone-400 pointer-events-none" />
+                            <span className="absolute left-3.5 text-stone-500 font-semibold font-mono text-sm pointer-events-none">₹</span>
                             <input
                                 type="number"
                                 placeholder="e.g. 2400"

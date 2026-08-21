@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Send, DollarSign, ShieldCheck } from 'lucide-react';
+import { X, Send, ShieldCheck } from 'lucide-react';
 
 export interface BidModalProps {
     isOpen: boolean;
@@ -70,7 +70,7 @@ export function BidModal({
                             Bid Quote (INR ₹)
                         </label>
                         <div className="relative flex items-center">
-                            <DollarSign className="absolute left-3.5 w-4 h-4 text-[#6B635B]" />
+                            <span className="absolute left-3.5 text-[#6B635B] font-semibold font-mono text-sm pointer-events-none">₹</span>
                             <input
                                 id="bid-quote-input"
                                 type="number"
