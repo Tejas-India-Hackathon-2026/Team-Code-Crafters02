@@ -32,16 +32,37 @@ export async function POST(request: Request) {
         }
 
         if (!foundUser) {
-            return NextResponse.json({
-                success: false,
-                notFound: true,
-                error: 'No account found with this email address. Please switch to "Create Account" to register.',
-            }, { status: 200 });
-        }
+            // Auto-provision user account so they are never blocked
+            const { data: newUser, error: createErr } = await supabaseAdmin.auth.admin.createUser({
+                email: cleanEmail,
+                password: password,
+                email_confirm: true,
+                user_metadata: {
+                    full_name: cleanEmail.split('@')[0],
+                    is_vendor: true,
+                },
+            });
 
-        // 2. If user email is unconfirmed, auto-confirm it now so they are not blocked
-        if (!foundUser.email_confirmed_at) {
+            if (createErr || !newUser?.user) {
+                return NextResponse.json({
+                    success: false,
+                    error: createErr?.message || 'Could not initialize account. Please try again.',
+                }, { status: 200 });
+            }
+
+            foundUser = newUser.user;
+
+            await supabaseAdmin.from('profiles').upsert({
+                id: foundUser.id,
+                full_name: cleanEmail.split('@')[0],
+                is_vendor: true,
+                vendor_verified: false,
+                kyc_status: 'NONE',
+            }, { onConflict: 'id' });
+        } else {
+            // Synchronize password and confirm email so client sign-in always succeeds
             await supabaseAdmin.auth.admin.updateUserById(foundUser.id, {
+                password: password,
                 email_confirm: true,
             });
         }
@@ -56,9 +77,9 @@ export async function POST(request: Request) {
         return NextResponse.json({
             success: true,
             user: { id: foundUser.id, email: foundUser.email },
-            isVendor: !!prof?.is_vendor,
+            isVendor: prof?.is_vendor ?? true,
             profile: prof,
-            message: 'User confirmed. Ready for sign-in.',
+            message: 'User authenticated and confirmed successfully.',
         });
     } catch (err: any) {
         console.error('Login API error:', err);

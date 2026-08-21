@@ -31,12 +31,34 @@ export default function ArtisanWelcomePage() {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
+        let isMounted = true;
+
         const checkArtisan = async () => {
-            const { data: { user: authUser } } = await supabase.auth.getUser();
+            // 1. Check local session (fast & instant)
+            const { data: { session } } = await supabase.auth.getSession();
+            let authUser = session?.user;
+
+            // 2. Fallback to getUser()
             if (!authUser) {
-                router.push('/login?next=/artisan');
+                const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+                authUser = data?.user;
+            }
+
+            // 3. Grace period for cookie / localStorage hydration
+            if (!authUser) {
+                await new Promise((r) => setTimeout(r, 600));
+                const { data: { session: retrySession } } = await supabase.auth.getSession();
+                authUser = retrySession?.user;
+            }
+
+            if (!authUser) {
+                if (isMounted) {
+                    router.push('/login?next=/artisan');
+                }
                 return;
             }
+
+            if (!isMounted) return;
             setUser(authUser);
 
             const { data: prof } = await supabase
@@ -62,17 +84,23 @@ export default function ArtisanWelcomePage() {
             const finalLoc = cachedLoc || authUser.user_metadata?.location || '';
             const isVerified = !!(finalLogo && finalLoc && finalLoc.trim().length > 0);
 
-            setProfile({
-                id: authUser.id,
-                full_name: prof?.full_name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Artisan Maker',
-                is_vendor: true,
-                vendor_verified: isVerified,
-                avatar_url: finalLogo,
-            });
-            setLoading(false);
+            if (isMounted) {
+                setProfile({
+                    id: authUser.id,
+                    full_name: prof?.full_name || authUser.user_metadata?.full_name || authUser.email?.split('@')[0] || 'Artisan Maker',
+                    is_vendor: true,
+                    vendor_verified: isVerified,
+                    avatar_url: finalLogo,
+                });
+                setLoading(false);
+            }
         };
 
         checkArtisan();
+
+        return () => {
+            isMounted = false;
+        };
     }, []);
 
     if (loading) {

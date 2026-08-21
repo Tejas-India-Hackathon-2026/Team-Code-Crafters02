@@ -64,18 +64,40 @@ export default function ArtisanOnboardingPage() {
     const [successMsg, setSuccessMsg] = useState('');
 
     useEffect(() => {
+        let isMounted = true;
+
         const checkUser = async () => {
-            const { data: { user: currentUser } } = await supabase.auth.getUser();
-            if (!currentUser) {
-                router.push('/login?next=/verification/onboarding');
+            // 1. Check local session (fast)
+            const { data: { session } } = await supabase.auth.getSession();
+            let authUser = session?.user;
+
+            // 2. Fallback to getUser()
+            if (!authUser) {
+                const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+                authUser = data?.user;
+            }
+
+            // 3. Grace period for cookie / localStorage hydration
+            if (!authUser) {
+                await new Promise((r) => setTimeout(r, 600));
+                const { data: { session: retrySession } } = await supabase.auth.getSession();
+                authUser = retrySession?.user;
+            }
+
+            if (!authUser) {
+                if (isMounted) {
+                    router.push('/login?next=/verification/onboarding');
+                }
                 return;
             }
-            setUser(currentUser);
+
+            if (!isMounted) return;
+            setUser(authUser);
 
             const { data: prof } = await supabase
                 .from('profiles')
                 .select('*')
-                .eq('id', currentUser.id)
+                .eq('id', authUser.id)
                 .maybeSingle();
 
             if (prof) {
@@ -83,14 +105,14 @@ export default function ArtisanOnboardingPage() {
                 if (prof.full_name) setWorkshopName(prof.full_name);
                 if (prof.avatar_url) setLogoPreview(prof.avatar_url);
 
-                if (currentUser.user_metadata?.craft_categories) {
-                    setSelectedCategories(currentUser.user_metadata.craft_categories);
+                if (authUser.user_metadata?.craft_categories) {
+                    setSelectedCategories(authUser.user_metadata.craft_categories);
                 }
-                if (currentUser.user_metadata?.location) {
-                    setLocation(currentUser.user_metadata.location);
+                if (authUser.user_metadata?.location) {
+                    setLocation(authUser.user_metadata.location);
                 }
-                if (currentUser.user_metadata?.tax_id) {
-                    setTaxId(currentUser.user_metadata.tax_id);
+                if (authUser.user_metadata?.tax_id) {
+                    setTaxId(authUser.user_metadata.tax_id);
                 }
 
                 // If artisan is already registered & verified, route straight to dashboard

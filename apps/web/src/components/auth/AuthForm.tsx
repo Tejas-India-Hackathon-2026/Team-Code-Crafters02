@@ -53,12 +53,14 @@ export default function AuthForm() {
                     .maybeSingle();
 
                 const nextUrl = searchParams?.get('next');
-                const dest = nextUrl || (prof?.is_vendor ? '/artisan' : '/profile');
+                const dest = (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login'))
+                    ? nextUrl
+                    : (prof?.is_vendor ? '/artisan' : '/profile');
                 window.location.href = dest;
                 return;
             }
 
-            // 2. Server-assisted login fallback (auto-confirms unverified emails)
+            // 2. Server-assisted login fallback (auto-provisions / updates credentials & confirms email)
             const res = await fetch('/api/auth/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -71,7 +73,7 @@ export default function AuthForm() {
             const loginData = await res.json();
 
             if (loginData.success) {
-                // Retry client signIn now that account is confirmed
+                // Retry client signIn now that account is synchronized
                 const { data: retryData, error: retryError } = await supabase.auth.signInWithPassword({
                     email: cleanEmail,
                     password: cleanPassword,
@@ -80,11 +82,13 @@ export default function AuthForm() {
                 if (!retryError && retryData?.user) {
                     await supabase.auth.getSession();
                     const nextUrl = searchParams?.get('next');
-                    const dest = nextUrl || (loginData.isVendor ? '/artisan' : '/profile');
+                    const dest = (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login'))
+                        ? nextUrl
+                        : (loginData.isVendor ? '/artisan' : '/profile');
                     window.location.href = dest;
                     return;
                 } else {
-                    setErrorMsg(retryError?.message || 'Invalid email or password. Please check your credentials.');
+                    setErrorMsg(retryError?.message || 'Sign in could not be completed. Please check your credentials.');
                     setLoading(false);
                     return;
                 }
@@ -160,7 +164,9 @@ export default function AuthForm() {
             await supabase.auth.getSession();
 
             const nextUrl = searchParams?.get('next');
-            const dest = nextUrl || (isArtisan ? '/verification/onboarding' : '/profile');
+            const dest = (nextUrl && nextUrl.startsWith('/') && !nextUrl.startsWith('/login'))
+                ? nextUrl
+                : (isArtisan ? '/verification/onboarding' : '/profile');
             window.location.href = dest;
         } catch (err: any) {
             console.error('Registration Error:', err);

@@ -172,11 +172,30 @@ export default function VendorDashboardPage() {
 
     const loadDashboard = async () => {
         setLoading(true);
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) {
+
+        // 1. Check local session (fast)
+        const { data: { session } } = await supabase.auth.getSession();
+        let authUser = session?.user;
+
+        // 2. Fallback to getUser()
+        if (!authUser) {
+            const { data } = await supabase.auth.getUser().catch(() => ({ data: { user: null } }));
+            authUser = data?.user;
+        }
+
+        // 3. Grace period for cookie / localStorage hydration
+        if (!authUser) {
+            await new Promise((r) => setTimeout(r, 600));
+            const { data: { session: retrySession } } = await supabase.auth.getSession();
+            authUser = retrySession?.user;
+        }
+
+        if (!authUser) {
             router.push('/login?next=/dashboard');
             return;
         }
+
+        const user = authUser;
 
         // 1. Fetch profile from Supabase profiles table
         const { data: prof } = await supabase
